@@ -1,0 +1,270 @@
+"Games"
+{
+	"left4dead2"
+	{
+		"Offsets"
+		{
+			"RoundRespawn_Offset"
+			{
+				"linux"		"25" // 0x19
+				"windows"	"15"
+			}
+
+			"RoundRespawn_Byte" // JNZ => JNS
+			{
+				"linux"		"117" // 0x75
+				"windows"	"117"
+			}
+
+			"m_nFallenSurvivors"
+			{
+				"linux"		"8"
+				"windows"	"8"
+			}
+
+			"m_FallenSurvivorTimer"
+			{
+				"linux"		"12"
+				"windows"	"12"
+			}
+
+			"CTerrorWeapon::GetReloadDurationModifier"
+			{
+				"linux"		"359"
+				"windows"	"358"
+			}
+
+			"CTerrorGun::GetRateOfFire"
+			{
+				"linux"		"454"
+				"windows"	"452"
+			}
+
+			"CBaseBeltItem::GetUseTimerDuration"
+			{
+				"linux"		"450"
+				"windows"	"448"
+			}
+			
+			"CTerrorWeapon::GetDeployDurationModifier"
+			{
+				"linux"		"360"
+				"windows"	"359"
+			}
+
+			"CTerrorWeapon::Deploy"
+			{
+				"linux"		"265"
+				"windows"	"264"
+			}
+
+			"CBaseCSGrenade::PrimaryAttack"
+			{
+				"linux"		"283"
+				"windows"	"282"
+			}
+
+			"CBaseCSGrenade::StartGrenadeThrow"
+			{
+				"linux"		"450"
+				"windows"	"448"
+			}
+
+			"CTerrorGun::GetRateOfFire_patch"
+			{
+				"linux"		"20"
+				"windows"	"14"
+			}
+
+			"CPistol::GetRateOfFire_patch"
+			{
+				"linux"		"23"
+				"windows"	"17"
+			}
+
+			"CRifle_Desert::PrimaryAttack"
+			{
+				"linux"		"283"
+				"windows"	"282"
+			}
+
+			"CRifle_Desert::BurstTimes_StartOffset"
+			{
+				"linux"		"6132"
+				"windows"	"6128"
+			}
+		}
+
+		"Addresses"
+		{
+			"CTerrorGun::GetRateOfFire"
+			{
+				"linux"
+				{
+					"signature"	"CTerrorGun::GetRateOfFire"
+				}
+				"windows"
+				{
+					"signature"	"CTerrorGun::GetRateOfFire"			
+				}
+			}
+
+			"CPistol::GetRateOfFire"
+			{
+				"linux"
+				{
+					"signature"	"CPistol::GetRateOfFire"
+				}
+				"windows"
+				{
+					"signature"	"CPistol::GetRateOfFire"			
+				}
+			}
+			"NextBotCreatePlayerBot.jumptable"
+			{
+				"windows"
+				{
+					"signature"	"CTerrorPlayer::ReplaceWithBot.jumptable"
+					"offset"	"7"
+				}
+			}
+		}
+
+		"Functions"
+		{
+			"CTerrorMeleeWeapon::StartMeleeSwing"
+			{
+				"signature"  "CTerrorMeleeWeapon::StartMeleeSwing"
+				"callconv"  "thiscall"
+				"return"  "int"
+				"this"  "entity"
+				"arguments"
+				{
+					"Player"
+					{
+						"type"    "cbaseentity"
+					}
+					"IsPrimanyAttack"
+					{
+						"type"    "bool"
+					}
+				}
+			}
+
+			"CTerrorMeleeWeapon::TestMeleeSwingCollision"
+			{
+				"signature"	"CTerrorMeleeWeapon::TestMeleeSwingCollision"
+				"callconv"	"thiscall"
+				"return"	"int"
+				"this"		"entity"
+				"arguments"
+				{
+					"a1"
+					{
+						"type"	"cbaseentity"
+					}
+				}
+			}
+		}
+
+		"Signatures"
+		{
+			"CTerrorPlayer::ReplaceWithBot.jumptable"
+			{
+				"library" "server"
+				"windows" "\xFF\x24\x85\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\xEB\x2A\x68\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\xEB\x2A\x68\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\xEB\x2A\x68\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\xEB\x2A\x68\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\xEB\x2A\x68\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\xEB\x2A\x68\x2A\x2A\x2A\x2A\xE8"
+			}
+			"CTerrorPlayer::RoundRespawn"
+			{
+				"library"	"server"
+				"linux"		"@_ZN13CTerrorPlayer12RoundRespawnEv"
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\x84\x2A\x75\x2A\x8B\x2A\xE8\x2A\x2A\x2A\x2A\xC6\x86"
+			}
+
+			"TerrorNavMesh::GetLastCheckpoint"
+			{
+				"library"	"server"
+				"linux"		"@_ZNK13TerrorNavMesh17GetLastCheckpointEv"
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x56\x33\x2A\x57\x85\x2A\x7E\x2A\x8B\xB1\x2A\x2A\x2A\x2A\x8B\x2A\x8B"
+			}
+
+			"Checkpoint::GetLargestArea"
+			{
+				"library"	"server"
+				"linux"		"@_ZNK10Checkpoint14GetLargestAreaEv"
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x8B\x2A\x53\x8B\x2A\x2A\x33\x2A\x33\x2A\x89\x2A\x2A\x83"
+			}
+
+			"NextBotCreatePlayerBot<Smoker>"
+			{
+				"library"	"server"
+				"linux"		"@_Z22NextBotCreatePlayerBotI6SmokerEPT_PKc"
+			}
+
+			"NextBotCreatePlayerBot<Boomer>"
+			{
+				"library"	"server"
+				"linux"		"@_Z22NextBotCreatePlayerBotI6BoomerEPT_PKc"
+			}
+
+			"NextBotCreatePlayerBot<Hunter>"
+			{
+				"library"	"server"
+				"linux"		"@_Z22NextBotCreatePlayerBotI6HunterEPT_PKc"
+			}
+
+			"NextBotCreatePlayerBot<Spitter>"
+			{
+				"library"	"server"
+				"linux"		"@_Z22NextBotCreatePlayerBotI7SpitterEPT_PKc"
+			}
+
+			"NextBotCreatePlayerBot<Jockey>"
+			{
+				"library"	"server"
+				"linux"		"@_Z22NextBotCreatePlayerBotI6JockeyEPT_PKc"
+			}
+
+			"NextBotCreatePlayerBot<Charger>"
+			{
+				"library"	"server"
+				"linux"		"@_Z22NextBotCreatePlayerBotI7ChargerEPT_PKc"
+			}
+
+			"NextBotCreatePlayerBot<Tank>"
+			{
+				"library"	"server"
+				"linux"		"@_Z22NextBotCreatePlayerBotI4TankEPT_PKc"
+			}
+
+			"CTerrorGun::GetRateOfFire"
+			{
+				"library"		"server"
+				"linux"			"@_ZNK10CTerrorGun13GetRateOfFireEv"
+				"windows"		"\x55\x8B\xEC\x51\x56\x8B\xF1\xE8\x2A\x2A\x2A\x2A\x85\xC0\x74\x2A\x8B\x10"
+			}
+
+			"CPistol::GetRateOfFire"
+			{
+				"library"		"server"
+				"linux"			"@_ZNK7CPistol13GetRateOfFireEv"
+				"windows"		"\x56\x8B\xF1\x8B\x06\x8B\x90\x70\x06\x00\x00\xFF\xD2\x8B\xCE\x84\xC0\x74\x2A\xE8\x2A\x2A\x2A\x2A\x85\xC0"
+			}
+
+			"CTerrorMeleeWeapon::StartMeleeSwing"
+			{
+				"library"		"server"
+				"linux"			"@_ZN18CTerrorMeleeWeapon15StartMeleeSwingEP13CTerrorPlayerb"
+				"windows"		"\x2A\x2A\x2A\x2A\x2A\x2A\xF1\x8B\x86\xDC\x17\x00\x00\x50\xB9\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\x8B"
+			}
+
+			"CTerrorMeleeWeapon::TestMeleeSwingCollision"
+			{
+				"library"	"server"
+				"linux"		"@_ZN18CTerrorMeleeWeapon23TestMeleeSwingCollisionERK6Vector"
+				"windows"		"\x2A\x2A\x2A\x2A\x2A\x2A\x83\x2A\x2A\x83\x2A\x2A\x55\x8B\x2A\x2A\x89\x2A\x2A\x2A\x8B\x2A\x81\xEC\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x33\x2A\x89\x2A\x2A\x56\x8B\x2A\x2A\x57\x89\x2A\x2A\xE8"
+
+			}
+		}
+	}
+}
