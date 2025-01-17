@@ -421,10 +421,10 @@ Action Timer_BrokenRibs(Handle timer, DataPack dataPack)
 	dataPack.Reset();
 	int attacker = dataPack.ReadCell();
 	int victim = dataPack.ReadCell();
-	delete dataPack;
 	if (!IsValidClient(victim) || !IsValidClient(attacker))
 	{
 		g_hBrokenRibsTimer[victim] = null;
+		delete dataPack;
 		return Plugin_Stop;
 	}
 	if (brokenribs[victim] <= 0)
@@ -432,6 +432,7 @@ Action Timer_BrokenRibs(Handle timer, DataPack dataPack)
 		if (g_hBrokenRibsTimer[victim] != null)
 		{
 			g_hBrokenRibsTimer[victim] = null;
+			delete dataPack;
 		}
 		return Plugin_Stop;
 	}
