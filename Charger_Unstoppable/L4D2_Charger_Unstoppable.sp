@@ -406,8 +406,7 @@ Action ChargerAbility_BrokenRibs(int victim, int attacker)
 			{
 				brokenribs[victim] = g_iBrokenRibsDuration;
 				DataPack dataPack = new DataPack();
-				delete g_hBrokenRibsTimer[victim];
-				g_hBrokenRibsTimer[victim] = CreateDataTimer(1.0, Timer_BrokenRibs, dataPack, TIMER_REPEAT);
+				g_hBrokenRibsTimer[victim] = CreateDataTimer(1.0, Timer_BrokenRibs, dataPack, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 				dataPack.WriteCell(attacker);
 				dataPack.WriteCell(victim);
 			}
@@ -421,25 +420,21 @@ Action Timer_BrokenRibs(Handle timer, DataPack dataPack)
 	dataPack.Reset();
 	int attacker = dataPack.ReadCell();
 	int victim = dataPack.ReadCell();
-	if (!IsValidClient(victim) || !IsValidClient(attacker))
+	if (IsValidClient(victim))
 	{
-		g_hBrokenRibsTimer[victim] = null;
-		delete dataPack;
-		return Plugin_Stop;
-	}
-	if (brokenribs[victim] <= 0)
-	{
-		if (g_hBrokenRibsTimer[victim] != null)
+		if (brokenribs[victim] <= 0)
 		{
-			g_hBrokenRibsTimer[victim] = null;
-			delete dataPack;
+			if (g_hBrokenRibsTimer[victim] != null)
+			{
+				g_hBrokenRibsTimer[victim] = null;
+			}
+			return Plugin_Stop;
 		}
-		return Plugin_Stop;
-	}
-	DamageHook(victim, attacker, g_iBrokenRibsDamage);
-	if (brokenribs[victim] > 0) 
-	{
-		brokenribs[victim] -= 1;
+		DamageHook(victim, attacker, g_iBrokenRibsDamage);
+		if (brokenribs[victim] > 0) 
+		{
+			brokenribs[victim] -= 1;
+		}
 	}
 	return Plugin_Continue;
 }
