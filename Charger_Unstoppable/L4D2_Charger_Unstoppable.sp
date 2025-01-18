@@ -394,7 +394,7 @@ Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, in
 	return Plugin_Changed;
 }
 
-Action ChargerAbility_BrokenRibs(int victim, int attacker)
+void ChargerAbility_BrokenRibs(int victim, int attacker)
 {
 	if (IsValidClient(victim) && GetClientTeam(victim) == L4D_TEAM_SURVIVOR)
 	{
@@ -412,7 +412,6 @@ Action ChargerAbility_BrokenRibs(int victim, int attacker)
 			}
 		}
 	}
-	return Plugin_Continue;
 }
 
 Action Timer_BrokenRibs(Handle timer, DataPack dataPack) 
@@ -459,6 +458,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			vec[1] = GetEntPropFloat(client, Prop_Send, "m_vecVelocity[1]");
 			vec[2] = GetEntPropFloat(client, Prop_Send, "m_vecVelocity[2]") + g_fInertiaVaultPower;
 			TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, vec);
+			delete g_hResetDelayTimer[client];
 			g_hResetDelayTimer[client] = CreateTimer(1.0, ResetDelay, client);
 		}
 	}
@@ -470,20 +470,18 @@ Action ResetDelay(Handle timer, int client)
 	buttondelay[client] = false;
 	if (g_hResetDelayTimer[client] != null)
 	{
-		KillTimer(g_hResetDelayTimer[client]);
 		g_hResetDelayTimer[client] = null;
 	}
 	return Plugin_Stop;
 }
 
-Action ChargerAbility_LocomotiveStart(int client)
+void ChargerAbility_LocomotiveStart(int client)
 {
 	if (IsValidCharger(client))
 	{
 		g_hLocomotiveTimer[client] = CreateTimer(0.5, Timer_LocomotiveStart, client, TIMER_REPEAT);
 // 		SetEntDataFloat(client, laggedMovementOffset, 1.0*GetConVarFloat(g_cvLocomotiveSpeed), true);
 	}
-	return Plugin_Continue;
 }
 
 Action Timer_LocomotiveStart(Handle timer, int client)
@@ -507,7 +505,7 @@ Action Timer_LocomotiveStart(Handle timer, int client)
 	return Plugin_Continue;
 }
 
-Action ChargerAbility_LocomotiveFinish(int client)
+void ChargerAbility_LocomotiveFinish(int client)
 {
 	if (IsValidCharger(client))
 	{
@@ -516,19 +514,17 @@ Action ChargerAbility_LocomotiveFinish(int client)
 		acceleration = 0.1;
 		SetEntDataFloat(client, laggedMovementOffset, 1.0, true);
 	}
-	return Plugin_Continue;
 }
 
-Action ChargerAbility_MeteorFist(int victim, int attacker)
+void ChargerAbility_MeteorFist(int victim, int attacker)
 {
 	if (IsValidCharger(attacker) && MeteorFist(attacker) && IsValidClient(victim) && GetClientTeam(victim) == L4D_TEAM_SURVIVOR && !IsSurvivorPinned(victim))
 	{
 		FlingHook(victim, attacker, g_fMeteorFistPower);
 	}
-	return Plugin_Continue;
 }
 
-Action ChargerAbility_SnappedLeg(int victim)
+void ChargerAbility_SnappedLeg(int victim)
 {
 	if (IsValidClient(victim) && GetClientTeam(victim) == L4D_TEAM_SURVIVOR && !isSlowed[victim])
 	{
@@ -541,7 +537,6 @@ Action ChargerAbility_SnappedLeg(int victim)
 			g_hSnappedLegTimer[victim] = CreateTimer(g_fSnappedLegDuration, Timer_SnappedLeg, victim);
 		}
 	}
-	return Plugin_Continue;
 }
 
 Action Timer_SnappedLeg(Handle timer, int victim)
@@ -612,7 +607,7 @@ Action ChargerAbility_SurvivorAegis(int victim)
 	return Plugin_Continue;
 }
 
-Action ChargerAbility_VoidChamber(int attacker)
+void ChargerAbility_VoidChamber(int attacker)
 {
 	if (IsValidCharger(attacker))
 	{
@@ -660,7 +655,6 @@ Action ChargerAbility_VoidChamber(int attacker)
 			}
 		}
 	}
-	return Plugin_Continue;
 }
 
 void DamageHook(int victim, int attacker, int damage)
