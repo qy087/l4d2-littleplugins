@@ -663,7 +663,7 @@ Action ChargerAbility_VoidChamber(int attacker)
 	return Plugin_Continue;
 }
 
-stock void DamageHook(int victim, int attacker, int damage)
+void DamageHook(int victim, int attacker, int damage)
 {
 	float victimPos[3];
 	char strDamage[16];
@@ -686,7 +686,7 @@ stock void DamageHook(int victim, int attacker, int damage)
 	AcceptEntityInput(entPointHurt, "kill");
 }
 
-stock void FlingHook(int victim, int attacker, float power)
+void FlingHook(int victim, int attacker, float power)
 {
 	float HeadingVector[3];
 	float AimVector[3];
