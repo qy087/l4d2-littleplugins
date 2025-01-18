@@ -566,6 +566,7 @@ Action ChargerAbility_StowawayStart(int victim)
 	{
 		stowaway[victim] = 1;
 		isCarried[victim] = true;
+		delete g_hStowawayTimer[victim];
 		g_hStowawayTimer[victim] = CreateTimer(0.5, Timer_Stowaway, victim, TIMER_REPEAT);
 	}
 	return Plugin_Continue;
@@ -583,7 +584,6 @@ Action Timer_Stowaway(Handle timer, int client)
 		{
 			if (g_hStowawayTimer[client] != null)
 			{
-				KillTimer(g_hStowawayTimer[client]);
 				g_hStowawayTimer[client] = null;
 			}
 			return Plugin_Stop;	
