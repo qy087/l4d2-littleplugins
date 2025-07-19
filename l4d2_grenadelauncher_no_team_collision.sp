@@ -1,6 +1,6 @@
 
-	//Special Thanks: blueblur0730
-	//https://github.com/blueblur0730
+//Special Thanks: blueblur0730
+//https://github.com/blueblur0730
 	
 #pragma semicolon 1
 #pragma newdecls required
@@ -30,11 +30,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public Plugin myinfo =
 {
-	name = "L4D2 Genade Launcher No Team Collision",
+	name = "[L4D2] Genade Launcher No Team Collision",
 	author = "qy087, blueblur",
-	description = "",
+	description = "Pass your grenade launcher projectile through teammates.",
 	version = PLUGIN_VERSION,
-	url = ""
+	url = "https://github.com/blueblur0730/modified-plugins"
 };
 
 public void OnPluginStart()
@@ -64,6 +64,7 @@ void GetCvars()
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
+	if (!g_bEnable) return;
 	if(strncmp(classname, "grenade_launcher_projectile", 27) == 0)
 	{
 		SDKHook(entity, SDKHook_Touch, OnTouch);
@@ -71,6 +72,7 @@ public void OnEntityCreated(int entity, const char[] classname)
 	}
 }
 
+// @blueblur0730: 榴弹爆炸受touch控制. 榴弹的touch事件回调函数为CGrenadeLauncher_Projectile::ExplodeTouch.
 Action OnTouch(int entity, int other)
 {
 	if (!IsValidClient(other))
@@ -98,7 +100,9 @@ void NextFrame_OnEndTouchPost(int entity)
     SetEntProp(entity, Prop_Data, "m_CollisionGroup", 0);
 }
 
-//CH_ShouldCollide测试多次无效只能用CH_PassFilter较消耗性能方式
+// @qy087: CH_ShouldCollide测试多次无效只能用CH_PassFilter较消耗性能方式
+// @blueblur0730: (to do) 能否寻求更好的监测碰撞前的hook? 这里使用collison hook实在是太小题大作了.
+// @blueblur0730: 能否穿透生还者身上的物品? 
 public Action CH_PassFilter(int entity1, int entity2, bool &result)
 {
 	if (!IsValidGLPJEntityIndex(entity1) || !g_bEnable) return Plugin_Continue;
@@ -112,8 +116,8 @@ public Action CH_PassFilter(int entity1, int entity2, bool &result)
 	}
 	
 	SetEntProp(entity1, Prop_Data, "m_CollisionGroup", 1);
-	//result = false; //此处更改无效只能通过改属性解决
-	//return Plugin_Changed; //此处更改无效只能通过改属性解决
+	//result = false; // @qy087: 此处更改无效只能通过改属性解决
+	//return Plugin_Changed; // @qy087: 此处更改无效只能通过改属性解决
 	return Plugin_Continue;
 }
 
