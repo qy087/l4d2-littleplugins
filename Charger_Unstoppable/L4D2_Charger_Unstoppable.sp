@@ -1,12 +1,14 @@
 /*****************************************************************
  Original https://forums.alliedmods.net/showthread.php?p=2092125
 *****************************************************************/
+#pragma semicolon 1
+#pragma newdecls required
+
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
 #include <left4dhooks>
-#pragma semicolon 1
-#pragma newdecls required
+
 #define PLUGIN_VERSION "1.4"
 #define CVAR_FLAGS                    FCVAR_NOTIFY
 
@@ -110,7 +112,20 @@ public Plugin myinfo =
 	
 	//Karma - Tank Skill Roar
 	//https://forums.alliedmods.net/showthread.php?t=126919
-
+	
+bool g_bLate = false;
+// Startup
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+	EngineVersion test = GetEngineVersion();
+	if (test != Engine_Left4Dead2)
+	{
+		strcopy(error, err_max, "This plugin only runs in \"Left 4 Dead 2\" game");
+		return APLRes_SilentFailure;
+	}
+	g_bLate = late;
+	return APLRes_Success;
+}
 public void OnPluginStart()
 {
 	CreateConVar("l4d_ucm_version", PLUGIN_VERSION, "Unstoppable Charger Version", FCVAR_SPONLY|FCVAR_DONTRECORD|FCVAR_NOTIFY);
@@ -129,7 +144,7 @@ public void OnPluginStart()
 	g_cvLocomotiveSpeed = CreateConVar("l4d_ucm_locomotivespeed", "1.4", "Multiplier for increase in Charger speed.", CVAR_FLAGS, true, 0.0);
 	g_cvLocomotiveDuration = CreateConVar("l4d_ucm_locomotiveduration", "4.0", "Amount of time for which the Charger continues to run.", CVAR_FLAGS, true, 0.0);
 
-	g_cvMeteorFist = CreateConVar("l4d_ucm_meteorfist", "1", "Enables Meteor Fist ability: Utilizing his overally muscular arm, when the Charger strikes a Survivor while charging or with his fist, they are sent flying.", CVAR_FLAGS, true, 0.0, true, 1.0);
+	g_cvMeteorFist = CreateConVar("l4d_ucm_meteorfist", "0", "Enables Meteor Fist ability: Utilizing his overally muscular arm, when the Charger strikes a Survivor while charging or with his fist, they are sent flying.", CVAR_FLAGS, true, 0.0, true, 1.0);
 	g_cvMeteorFistPower = CreateConVar("l4d_ucm_meteorfistpower", "200.0", "Power behind the Charger's Meteor Fist", CVAR_FLAGS);
 	g_cvMeteorFistCooldown = CreateConVar("l4d_ucm_meteorfistcooldown", "10.0", "Amount of time between Meteor Fists", CVAR_FLAGS);
 
@@ -138,7 +153,7 @@ public void OnPluginStart()
 	g_cvSnappedLegDuration = CreateConVar("l4d_ucm_snappedlegduration", "5", "For how many seconds will the Snapped Leg reduce movement speed (100 = 100%).", CVAR_FLAGS);
 	g_cvSnappedLegSpeed = CreateConVar("l4d_ucm_snappedlegspeed", "0.5", "How much does Snapped Leg reduce movement speed.", CVAR_FLAGS);
 
-	g_cvStowaway = CreateConVar("l4d_ucm_stowaway", "0", "Enables Stowaway ability: The longer the Charger has a Survivor, the more damage adds the Charger will deal when the charge comes to an end.", CVAR_FLAGS, true, 0.0, true, 1.0);
+	g_cvStowaway = CreateConVar("l4d_ucm_stowaway", "1", "Enables Stowaway ability: The longer the Charger has a Survivor, the more damage adds the Charger will deal when the charge comes to an end.", CVAR_FLAGS, true, 0.0, true, 1.0);
 	g_cvStowawayDamage = CreateConVar("l4d_ucm_stowawaydamage", "5", "How much damage is inflicted by Stowaway for each second carried.", CVAR_FLAGS);
 
 	g_cvSurvivorAegis = CreateConVar("l4d_ucm_survivoraegis", "1", "Enables Survivor Aegis ability: While charging, the Charger will use the Survivor as an Aegis to absorb damage it would receive.", CVAR_FLAGS, true, 0.0, true, 1.0);
@@ -191,7 +206,17 @@ public void OnPluginStart()
 	HookEvent("player_spawn", Event_PlayerSpawn);
 	
 	laggedMovementOffset = FindSendPropInfo("CTerrorPlayer", "m_flLaggedMovementValue");
-
+	
+	if (g_bLate)
+	{
+		for (int i = 1; i < MaxClients; i++)
+		{
+			if (IsClientInGame(i))
+			{
+				OnClientPutInServer(i);
+			}
+		}
+	}
 }
 
 void ConVarChanged_Allow(Handle convar, const char[] oldValue, const char[] newValue)
@@ -296,12 +321,11 @@ void Event_AbilityUse(Event event, const char[] name, bool dontBroadcast)
 
 void Event_ChargerCarryStart(Event event, const char[] name, bool dontBroadcast)
 {
+	if(!g_bStowAway) return;
 	int victim = GetClientOfUserId(event.GetInt("victim"));
 	if(!victim || !IsClientInGame(victim)) return;
-	if (g_bStowAway)
-	{
-		ChargerAbility_StowawayStart(victim);
-	}	
+
+	ChargerAbility_StowawayStart(victim);
 }
 
 void Event_ChargerImpact(Event event, const char[] name, bool dontBroadcast)
@@ -330,7 +354,7 @@ void Event_ChargerImpact(Event event, const char[] name, bool dontBroadcast)
 void Event_ChargeEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
-	if (!client || !IsClientInGame(client))
+	if (!IsValidClient(client))
 		return;
 	SetEntDataFloat(client, laggedMovementOffset, 1.0, true);
 
@@ -338,60 +362,52 @@ void Event_ChargeEnd(Event event, const char[] name, bool dontBroadcast)
 	{
 		ChargerAbility_LocomotiveFinish(client);
 	}
-	if (IsValidClient(client))
-	{
-		isCharging[client] = false;
-	}
+
+	isCharging[client] = false;
 }
 
 void Event_ChargerCarryEnd(Event event, const char[] name, bool dontBroadcast)
 {
+	if(!g_bStowAway) return;
 	int victim =  GetClientOfUserId(event.GetInt("victim"));
 	int attacker = GetClientOfUserId(event.GetInt("userid"));
-	if (!victim || !IsClientInGame(victim) || !attacker || !IsClientInGame(attacker))
+	if (!IsValidClient(victim) || !IsValidClient(attacker))
 		return;
 
-	if (g_bStowAway)
-	{
-		ChargerAbility_StowawayFinish(victim, attacker);
-	}
+	ChargerAbility_StowawayFinish(victim, attacker);
 }
 
 void Event_ChargerPummelEnd(Event event, const char[] name, bool dontBroadcast)
 {
+	if(!isBrokenRibs) return;
 	int victim =  GetClientOfUserId(event.GetInt("victim"));
 	int attacker = GetClientOfUserId(event.GetInt("userid"));
-	if (!victim || !IsClientInGame(victim) || !attacker || !IsClientInGame(attacker))
+	if (!IsValidClient(victim) || !IsValidClient(attacker))
 		return;
 
-	if (isBrokenRibs)
-	{
-		ChargerAbility_BrokenRibs(victim, attacker);
-	}
+	ChargerAbility_BrokenRibs(victim, attacker);
 }
 
 Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype)
 {
-
-	if (g_bSurvivorAegis && IsValidCharger(victim) && IsValidClient(attacker) && isCharging[victim])
+	if(!g_bSurvivorAegis) return Plugin_Continue;
+	if (IsValidCharger(victim) && IsValidClient(attacker) && isCharging[victim])
 	{
 		if (FloatCompare(g_fSurvivorAegisAmount, 1.0) != 0)
 		{
 			damage = damage * g_fSurvivorAegisAmount;
+			return Plugin_Changed;
 		}
 		ChargerAbility_SurvivorAegis(victim);
 	}
+	if(!g_bMeteorFist || !IsValidCharger(attacker)) return Plugin_Continue;
+	int weapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
+	if (L4D2_GetWeaponId(weapon) != L4D2WeaponId_ChargerClaw || !(damagetype & DMG_CLUB)) 
+		return Plugin_Continue;
 
-	if (IsValidCharger(attacker))
-	{
-		int weapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
-		if (g_bMeteorFist && L4D2_GetWeaponId(weapon) == L4D2WeaponId_ChargerClaw)
-		{
-			ChargerAbility_MeteorFist(victim, attacker);
-			lastMeteorFist[attacker] = GetEngineTime();
-		}
-	}
-	return Plugin_Changed;
+	ChargerAbility_MeteorFist(victim, attacker);
+	lastMeteorFist[attacker] = GetEngineTime();
+	return Plugin_Continue;
 }
 
 void ChargerAbility_BrokenRibs(int victim, int attacker)
@@ -423,10 +439,7 @@ Action Timer_BrokenRibs(Handle timer, DataPack dataPack)
 	{
 		if (brokenribs[victim] <= 0)
 		{
-			if (g_hBrokenRibsTimer[victim] != null)
-			{
-				g_hBrokenRibsTimer[victim] = null;
-			}
+			g_hBrokenRibsTimer[victim] = null;
 			return Plugin_Stop;
 		}
 		DamageHook(victim, attacker, g_iBrokenRibsDamage);
@@ -446,8 +459,11 @@ void ChargerAbility_ExtinguishingWind(int client)
 	}
 }
 
-public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon)
+public void OnPlayerRunCmdPost(int client, int buttons)
 {
+	if(IsFakeClient(client))
+		return;
+		
 	if (buttons & IN_JUMP && IsValidClient(client) && isCharging[client])
 	{
 		if (g_bInertiaVault && !buttondelay[client] && IsPlayerOnGround(client))
@@ -462,16 +478,12 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			g_hResetDelayTimer[client] = CreateTimer(1.0, ResetDelay, client);
 		}
 	}
-	return Plugin_Continue;
 }
 
 Action ResetDelay(Handle timer, int client)
 {
 	buttondelay[client] = false;
-	if (g_hResetDelayTimer[client] != null)
-	{
-		g_hResetDelayTimer[client] = null;
-	}
+	g_hResetDelayTimer[client] = null;
 	return Plugin_Stop;
 }
 
@@ -518,7 +530,7 @@ void ChargerAbility_LocomotiveFinish(int client)
 
 void ChargerAbility_MeteorFist(int victim, int attacker)
 {
-	if (IsValidCharger(attacker) && MeteorFist(attacker) && IsValidClient(victim) && GetClientTeam(victim) == L4D_TEAM_SURVIVOR && !IsSurvivorPinned(victim))
+	if (IsValidCharger(attacker) && MeteorFist(attacker) && IsValidClient(victim) && GetClientTeam(victim) == L4D_TEAM_SURVIVOR && L4D_GetPinnedInfected(victim) == 0)
 	{
 		FlingHook(victim, attacker, g_fMeteorFistPower);
 	}
@@ -547,11 +559,8 @@ Action Timer_SnappedLeg(Handle timer, int victim)
 		PrintHintText(victim, "Your leg is starting to feel better.");
 		isSlowed[victim] = false;
 	}
-	if (g_hSnappedLegTimer[victim] != null)
-	{
-		KillTimer(g_hSnappedLegTimer[victim]);
-		g_hSnappedLegTimer[victim] = null;
-	}		
+	KillTimer(g_hSnappedLegTimer[victim]);
+	g_hSnappedLegTimer[victim] = null;	
 	return Plugin_Stop;	
 }
 
@@ -577,10 +586,7 @@ Action Timer_Stowaway(Handle timer, int client)
 		}
 		if (!isCarried[client])
 		{
-			if (g_hStowawayTimer[client] != null)
-			{
-				g_hStowawayTimer[client] = null;
-			}
+			g_hStowawayTimer[client] = null;
 			return Plugin_Stop;	
 		}
 	}
@@ -609,50 +615,49 @@ Action ChargerAbility_SurvivorAegis(int victim)
 
 void ChargerAbility_VoidChamber(int attacker)
 {
-	if (IsValidCharger(attacker))
+	if(!IsValidCharger(attacker)) return;
+
+	for (int victim = 1; victim <= MaxClients; victim++)
+	if (IsValidClient(victim) && GetClientTeam(victim) == L4D_TEAM_SURVIVOR  && L4D_GetPinnedInfected(victim) == 0)
 	{
-		for (int victim = 1; victim <= MaxClients; victim++)
-		if (IsValidClient(victim) && GetClientTeam(victim) == L4D_TEAM_SURVIVOR  && !IsSurvivorPinned(victim))
+		float chargerPos[3];
+		float survivorPos[3];
+		float distance;
+		GetClientEyePosition(attacker, chargerPos);
+		GetClientEyePosition(victim, survivorPos);
+		distance = GetVectorDistance(survivorPos, chargerPos);
+		if (distance < g_fVoidChamberRange)
 		{
-			float chargerPos[3];
-			float survivorPos[3];
-			float distance;
-			GetClientEyePosition(attacker, chargerPos);
-			GetClientEyePosition(victim, survivorPos);
-			distance = GetVectorDistance(survivorPos, chargerPos);
-			if (distance < g_fVoidChamberRange)
-			{
-				char sRadius[256];
-				char sPower[256];
-				int magnitude;
-				magnitude = g_iVoidChamberPower * -1;
-				IntToString(RoundToCeil(g_fVoidChamberRange), sRadius, sizeof(sRadius));
-				IntToString(magnitude, sPower, sizeof(sPower));
-				int exPhys = CreateEntityByName("env_physexplosion");
-				DispatchKeyValue(exPhys, "radius", sRadius);
-				DispatchKeyValue(exPhys, "magnitude", sPower);
-				DispatchSpawn(exPhys);
-				TeleportEntity(exPhys, chargerPos, NULL_VECTOR, NULL_VECTOR);
-				AcceptEntityInput(exPhys, "Explode");
-				float traceVec[3];
-				float resultingVec[3];
-				float currentVelVec[3];
-				float power = float(g_iVoidChamberPower);
-				MakeVectorFromPoints(chargerPos, survivorPos, traceVec);
-				GetVectorAngles(traceVec, resultingVec);
-				resultingVec[0] = Cosine(DegToRad(resultingVec[1])) * power;
-				resultingVec[1] = Sine(DegToRad(resultingVec[1])) * power;
-				resultingVec[2] = power * SLAP_VERTICAL_MULTIPLIER;
-				GetEntPropVector(victim, Prop_Data, "m_vecVelocity", currentVelVec);
-				resultingVec[0] += currentVelVec[0];
-				resultingVec[1] += currentVelVec[1];
-				resultingVec[2] += currentVelVec[2];
-				resultingVec[0] = resultingVec[0] * -1;
-				resultingVec[1] = resultingVec[1] * -1;
-				//SDKCall(sdkCallFling, victim, resultingVec, 76, attacker, incaptime);
-				L4D2_CTerrorPlayer_Fling(victim, attacker, resultingVec);
-				DamageHook(victim, attacker, g_iVoidChamberDamage);
-			}
+			char sRadius[64];
+			char sPower[64];
+			int magnitude;
+			magnitude = g_iVoidChamberPower * -1;
+			IntToString(RoundToCeil(g_fVoidChamberRange), sRadius, sizeof(sRadius));
+			IntToString(magnitude, sPower, sizeof(sPower));
+			int exPhys = CreateEntityByName("env_physexplosion");
+			DispatchKeyValue(exPhys, "radius", sRadius);
+			DispatchKeyValue(exPhys, "magnitude", sPower);
+			DispatchSpawn(exPhys);
+			TeleportEntity(exPhys, chargerPos, NULL_VECTOR, NULL_VECTOR);
+			AcceptEntityInput(exPhys, "Explode");
+			float traceVec[3];
+			float resultingVec[3];
+			float currentVelVec[3];
+			float power = float(g_iVoidChamberPower);
+			MakeVectorFromPoints(chargerPos, survivorPos, traceVec);
+			GetVectorAngles(traceVec, resultingVec);
+			resultingVec[0] = Cosine(DegToRad(resultingVec[1])) * power;
+			resultingVec[1] = Sine(DegToRad(resultingVec[1])) * power;
+			resultingVec[2] = power * SLAP_VERTICAL_MULTIPLIER;
+			GetEntPropVector(victim, Prop_Data, "m_vecVelocity", currentVelVec);
+			resultingVec[0] += currentVelVec[0];
+			resultingVec[1] += currentVelVec[1];
+			resultingVec[2] += currentVelVec[2];
+			resultingVec[0] = resultingVec[0] * -1;
+			resultingVec[1] = resultingVec[1] * -1;
+			//SDKCall(sdkCallFling, victim, resultingVec, 76, attacker, incaptime);
+			L4D2_CTerrorPlayer_Fling(victim, attacker, resultingVec);
+			DamageHook(victim, attacker, g_iVoidChamberDamage);
 		}
 	}
 }
@@ -666,7 +671,7 @@ void DamageHook(int victim, int attacker, int damage)
 	IntToString(damage, strDamage, sizeof(strDamage));
 	Format(strDamageTarget, sizeof(strDamageTarget), "hurtme%d", victim);
 	int entPointHurt = CreateEntityByName("point_hurt");
-	if (!entPointHurt)
+	if (!entPointHurt) return;
 
 	DispatchKeyValue(victim, "targetname", strDamageTarget);
 	DispatchKeyValue(entPointHurt, "DamageTarget", strDamageTarget);
@@ -709,48 +714,17 @@ bool MeteorFist(int slapper)
 
 bool IsPlayerOnGround(int client)
 {
-	if (GetEntProp(client, Prop_Send, "m_fFlags") & FL_ONGROUND)
-	{
-		return true;
-	}
+	if(GetEntProp(client, Prop_Send, "m_fFlags") & FL_ONGROUND) return true;
 	return false;
 }
 
 bool IsValidCharger(int client)
 {
-	if (IsValidClient(client))
-	{
-		if (L4D2_GetPlayerZombieClass(client) == L4D2ZombieClass_Charger)
-		{
-			return true;
-		}
-	}
-	return false;
+	return (IsValidClient(client) && L4D2_GetPlayerZombieClass(client) == L4D2ZombieClass_Charger);
 }
 
 bool IsPlayerOnFire(int client)
 {
-	if (IsValidClient(client))
-	{
-		if (GetEntProp(client, Prop_Data, "m_fFlags") & FL_ONFIRE)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-bool IsSurvivorPinned(int client)
-{
-	if (GetEntPropEnt(client, Prop_Send, "m_tongueOwner") > 0)
-		return true;
-	if (GetEntPropEnt(client, Prop_Send, "m_pounceAttacker") > 0)
-		return true;
-	if (GetEntPropEnt(client, Prop_Send, "m_jockeyAttacker") > 0)
-		return true;
-	if (GetEntPropEnt(client, Prop_Send, "m_carryAttacker") > 0)
-		return true;
-	if (GetEntPropEnt(client, Prop_Send, "m_pummelAttacker") > 0)
-		return true;
+	if(GetEntProp(client, Prop_Data, "m_fFlags") & FL_ONFIRE) return true;
 	return false;
 }
