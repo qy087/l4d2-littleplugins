@@ -1,21 +1,46 @@
-
-//Special Thanks: blueblur0730
-//https://github.com/blueblur0730
-	
 #pragma semicolon 1
 #pragma newdecls required
 #include <sourcemod>
-#include <sdkhooks>
-#include <collisionhook>
+// #include <sdkhooks>
+#include <dhooks>
 
 #define PLUGIN_NAME			"l4d2_genade_launcher_no_collision"
-#define PLUGIN_VERSION 	"1.0"
-
-ConVar 
-	g_cvEnable;
+#define PLUGIN_VERSION 	"1.2"
 
 bool 
+	// g_bLinuxOS,
 	g_bEnable;
+
+DynamicDetour g_hGLPJCollideWithTeammatesThink;
+// https://github.com/Target5150/MoYu_Server_Stupid_Plugins/blob/master/include/%40Forgetest/gamedatawrapper.inc
+methodmap GameDataWrapper < GameData {
+	public GameDataWrapper(const char[] file) {
+		GameData gd = new GameData(file);
+		if (!gd) SetFailState("Missing gamedata \"%s\"", file);
+		return view_as<GameDataWrapper>(gd);
+	}
+	property GameData Super {
+		public get() { return view_as<GameData>(this); }
+	}
+	public int GetOffset(const char[] key) {
+		int offset = this.Super.GetOffset(key);
+		if (offset == -1) SetFailState("Missing offset \"%s\"", key);
+		return offset;
+	}
+	public DynamicDetour CreateDetourOrFail(
+			const char[] name,
+			DHookCallback preHook = INVALID_FUNCTION,
+			DHookCallback postHook = INVALID_FUNCTION) {
+		DynamicDetour hSetup = DynamicDetour.FromConf(this, name);
+		if (!hSetup)
+			SetFailState("Missing detour setup \"%s\"", name);
+		if (preHook != INVALID_FUNCTION && !hSetup.Enable(Hook_Pre, preHook))
+			SetFailState("Failed to pre-detour \"%s\"", name);
+		if (postHook != INVALID_FUNCTION && !hSetup.Enable(Hook_Post, postHook))
+			SetFailState("Failed to post-detour \"%s\"", name);
+		return hSetup;
+	}
+}
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
 	EngineVersion test = GetEngineVersion();
@@ -31,108 +56,148 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public Plugin myinfo =
 {
 	name = "[L4D2] Genade Launcher No Team Collision",
-	author = "qy087, blueblur",
+	author = "qy087, blueblur, 洛琪",
 	description = "Pass your grenade launcher projectile through teammates.",
 	version = PLUGIN_VERSION,
-	url = "https://github.com/blueblur0730/modified-plugins"
+	url = "https://github.com/qy087/l4d2-littleplugins/"
 };
-
+	// Thanks: @blueblur0730, @Mineralcr
+	// https://github.com/blueblur0730  https://github.com/Mineralcr
+	
 public void OnPluginStart()
 { 
-	CreateConVar( PLUGIN_NAME ... "_version", PLUGIN_VERSION, "L4D2 Genade Launcher No Team Collision Version", FCVAR_DONTRECORD|FCVAR_NOTIFY);
-	g_cvEnable = CreateConVar( PLUGIN_NAME ... "_enable","1", "Enable/Disable the Genade Launcher Team Collision", FCVAR_NOTIFY, true, 0.0, true, 1.0);
-	//AutoExecConfig(true, PLUGIN_NAME);
+	vCreatGameData();
 	
-	GetCvars();
-	g_cvEnable.AddChangeHook(ConVarChanged_Cvars);
+	GameDataWrapper gd = new GameDataWrapper(PLUGIN_NAME);
+	// g_bLinuxOS = gd.GetOffset("OS") == 1;
+	
+	// delete gd.CreateDetourOrFail("CGrenadeLauncher_Projectile::ExplodeTouch", DTR_GrenadeLauncher_Projectile_ExplodeTouch_Pre);
+
+	g_hGLPJCollideWithTeammatesThink = gd.CreateDetourOrFail("CGrenadeLauncher_Projectile::CollideWithTeammatesThink", DTR_CGrenadeLauncher_Projectile_CollideWithTeammatesThink_Pre);
+	delete gd;
+	CreateConVar( PLUGIN_NAME ... "_version", PLUGIN_VERSION, "L4D2 Genade Launcher No Team Collision Version", FCVAR_DONTRECORD|FCVAR_NOTIFY);
+
+	CreateConVarHook(
+		PLUGIN_NAME ... "_enable",
+		"1",
+		"Enable/Disable The Genade Launcher Team Collision",
+		FCVAR_NONE,
+		true, 0.0, true, 1.0,
+		ConVarChanged_Cvars);
+		
+	//AutoExecConfig(true, PLUGIN_NAME);
 }
 
-public void OnConfigsExecuted() 
+public void OnPluginEnd()
 {
-	GetCvars();
+	DHookCallback preHook = INVALID_FUNCTION;
+	g_hGLPJCollideWithTeammatesThink.Disable(Hook_Pre, preHook);
+	delete g_hGLPJCollideWithTeammatesThink;
 }
 
 void ConVarChanged_Cvars(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	GetCvars();
+	g_bEnable = convar.BoolValue;
 }
 
-void GetCvars()
-{
-	g_bEnable = g_cvEnable.BoolValue;
-}
-
+/*
 public void OnEntityCreated(int entity, const char[] classname)
 {
 	if (!g_bEnable) return;
 	if(strncmp(classname, "grenade_launcher_projectile", 27) == 0)
+		RequestFrame(NextFrame_GLPJ_Spawn, EntIndexToEntRef(entity));
+}
+
+void NextFrame_GLPJ_Spawn(int entity)
+{
+	entity = EntRefToEntIndex(entity);
+	if (entity == INVALID_ENT_REFERENCE) return;
+	
+	
+	//  Linux ((_BYTE *)this + 6784) 
+	//  Windows((_BYTE *)this + 6792) 
+	// SetEntData(entity, 6784 + (view_as<int>(!g_bLinuxOS) << 3), 1, 1, true);
+	
+}
+*/
+
+MRESReturn DTR_CGrenadeLauncher_Projectile_CollideWithTeammatesThink_Pre(int pThis, DHookReturn hReturn)
+{
+	if(g_bEnable)
 	{
-		SDKHook(entity, SDKHook_Touch, OnTouch);
-		SDKHook(entity, SDKHook_EndTouchPost, OnEndTouchPost);
+		hReturn.Value = pThis;
+		return MRES_Supercede;
+	}
+	return MRES_Ignored;
+}
+
+void vCreatGameData()
+{
+	char sFilePath[128];
+	BuildPath(Path_SM, sFilePath, sizeof(sFilePath), "gamedata/%s.txt", PLUGIN_NAME);
+	if (!FileExists(sFilePath))
+	{
+		File hTemp = OpenFile(sFilePath, "w");
+		if (hTemp == null)
+		{
+			SetFailState("Plugin " ... PLUGIN_NAME ... "Something went wrong while creating the game data file!");
+		}
+		
+		hTemp.WriteLine("\"Games\"");
+		hTemp.WriteLine("{");
+		hTemp.WriteLine("	\"left4dead2\"");
+		hTemp.WriteLine("	{");
+		hTemp.WriteLine("		\"Offsets\"");
+		hTemp.WriteLine("		{");
+		hTemp.WriteLine("			\"OS\"");
+		hTemp.WriteLine("			{");
+		hTemp.WriteLine("				\"windows\"		\"0\"");
+		hTemp.WriteLine("				\"linux\"		\"1\"");
+		hTemp.WriteLine("			}");
+		hTemp.WriteLine("		}");
+		hTemp.WriteLine("		\"Functions\"");
+		hTemp.WriteLine("		{");
+		hTemp.WriteLine("			\"CGrenadeLauncher_Projectile::CollideWithTeammatesThink\"");
+		hTemp.WriteLine("			{");
+		hTemp.WriteLine("				\"signature\"		\"CGrenadeLauncher_Projectile::CollideWithTeammatesThink\"");
+		hTemp.WriteLine("				\"callconv\"		\"thiscall\"");
+		hTemp.WriteLine("				\"return\"			\"int\"");
+		hTemp.WriteLine("				\"this\"			\"entity\"");
+		hTemp.WriteLine("			}");
+		hTemp.WriteLine("		}");
+		hTemp.WriteLine("		\"Signatures\"");
+		hTemp.WriteLine("		{");
+		hTemp.WriteLine("			\"CGrenadeLauncher_Projectile::CollideWithTeammatesThink\"");
+		hTemp.WriteLine("			{");
+		hTemp.WriteLine("				\"library\"	\"server\"");
+		hTemp.WriteLine("				\"linux\"	\"@_ZN27CGrenadeLauncher_Projectile25CollideWithTeammatesThinkEv\"");
+		hTemp.WriteLine("				\"windows\"	\"\\xC6\\x81\\x88\\x1A\\x00\\x00\\x01\"");
+		hTemp.WriteLine("				/* Thanks 洛琪 Find Windows Signature */");
+		hTemp.WriteLine("			}");
+		hTemp.WriteLine("		}");
+		hTemp.WriteLine("	}");
+		hTemp.WriteLine("}");
+		delete hTemp;
 	}
 }
 
-// @blueblur0730: 榴弹爆炸受touch控制. 榴弹的touch事件回调函数为CGrenadeLauncher_Projectile::ExplodeTouch.
-Action OnTouch(int entity, int other)
+stock ConVar CreateConVarHook(const char[] name,
+	const char[] defaultValue,
+	const char[] description="",
+	int flags=0,
+	bool hasMin=false, float min=0.0,
+	bool hasMax=false, float max=0.0,
+	ConVarChanged callback)
 {
-	if (!IsValidClient(other))
-        return Plugin_Continue;
-
-	if (GetClientTeam(other) != 2)
-		return Plugin_Continue;
-    
-	return Plugin_Handled; 
-}
-
-void OnEndTouchPost(int entity, int other)
-{
-    if (!IsValidClient(other))
-        return;
-
-    if (GetClientTeam(other) != 2)
-        return;
-        
-    RequestFrame(NextFrame_OnEndTouchPost, entity);
-}
-
-void NextFrame_OnEndTouchPost(int entity)
-{
-    SetEntProp(entity, Prop_Data, "m_CollisionGroup", 0);
-}
-
-// @qy087: CH_ShouldCollide测试多次无效只能用CH_PassFilter较消耗性能方式
-// @blueblur0730: (to do) 能否寻求更好的监测碰撞前的hook? 这里使用collison hook实在是太小题大作了.
-// @blueblur0730: 能否穿透生还者身上的物品? 
-public Action CH_PassFilter(int entity1, int entity2, bool &result)
-{
-	if (!IsValidGLPJEntityIndex(entity1) || !g_bEnable) return Plugin_Continue;
-
-	if(!IsValidClient(entity2)) return Plugin_Continue;
+	ConVar cv = CreateConVar(name, defaultValue, description, flags, hasMin, min, hasMax, max);
 	
-	if(GetClientTeam(entity2) == 3)
-	{
-		SetEntProp(entity1, Prop_Data, "m_CollisionGroup", 0);
-		return Plugin_Continue;
-	}
+	Call_StartFunction(INVALID_HANDLE, callback);
+	Call_PushCell(cv);
+	Call_PushNullString();
+	Call_PushNullString();
+	Call_Finish();
 	
-	SetEntProp(entity1, Prop_Data, "m_CollisionGroup", 1);
-	//result = false; // @qy087: 此处更改无效只能通过改属性解决
-	//return Plugin_Changed; // @qy087: 此处更改无效只能通过改属性解决
-	return Plugin_Continue;
-}
-
-bool IsValidClient(int client)
-{
-	return (client > 0 && client <= MaxClients && IsClientInGame(client));
-}
-
-bool IsValidEntityIndex(int entity)
-{
-    return (MaxClients+1 <= entity <= GetMaxEntities());
-}
-
-bool IsValidGLPJEntityIndex(int entity)
-{
-	char classname[48];
-	return IsValidEntityIndex(entity) && GetEdictClassname(entity, classname, sizeof(classname)) && strncmp(classname, "grenade_launcher_projectile", 27) == 0;
+	cv.AddChangeHook(callback);
+	
+	return cv;
 }
