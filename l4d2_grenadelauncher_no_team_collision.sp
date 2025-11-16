@@ -8,8 +8,8 @@
 
 bool 
 	g_bEnable;
+int g_iOff_m_bCollideWithTeammates = -1;
 
-DynamicDetour g_hGLPJCollideWithTeammatesThink;
 // https://github.com/Target5150/MoYu_Server_Stupid_Plugins/blob/master/include/%40Forgetest/gamedatawrapper.inc
 methodmap GameDataWrapper < GameData {
 	public GameDataWrapper(const char[] file) {
@@ -55,13 +55,10 @@ public void OnPluginStart()
 	
 	GameDataWrapper gd = new GameDataWrapper(PLUGIN_NAME);
 	g_iOff_m_bCollideWithTeammates = gd.GetOffset("CGrenadeLauncher_Projectile->m_bCollideWithTeammates");
-	
-	// delete gd.CreateDetourOrFail("CGrenadeLauncher_Projectile::ExplodeTouch", DTR_GrenadeLauncher_Projectile_ExplodeTouch_Pre);
-
 	// g_hGLPJCollideWithTeammatesThink = gd.CreateDetourOrFail("CGrenadeLauncher_Projectile::CollideWithTeammatesThink", DTR_CGrenadeLauncher_Projectile_CollideWithTeammatesThink_Pre);
 	delete gd;
-	CreateConVar( PLUGIN_NAME ... "_version", PLUGIN_VERSION, "L4D2 Genade Launcher No Team Collision Version", FCVAR_DONTRECORD|FCVAR_NOTIFY);
 
+	CreateConVar( PLUGIN_NAME ... "_version", PLUGIN_VERSION, "L4D2 Genade Launcher No Team Collision Version", FCVAR_DONTRECORD|FCVAR_NOTIFY);
 	CreateConVarHook(
 		PLUGIN_NAME ... "_enable",
 		"1",
@@ -105,7 +102,6 @@ void vCreatGameData()
 		{
 			SetFailState("Plugin " ... PLUGIN_NAME ... "Something went wrong while creating the game data file!");
 		}
-		
 		hTemp.WriteLine("\"Games\"");
 		hTemp.WriteLine("{");
 		hTemp.WriteLine("	\"left4dead2\"");
@@ -144,4 +140,5 @@ stock ConVar CreateConVarHook(const char[] name,
 	
 	return cv;
 }
+
 
