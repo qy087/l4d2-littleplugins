@@ -4,7 +4,7 @@
 #include <sdkhooks>
 
 #define PLUGIN_NAME			"l4d2_genade_launcher_no_collision"
-#define PLUGIN_VERSION 	"1.2"
+#define PLUGIN_VERSION 		"1.2"
 
 bool 
 	g_bEnable;
@@ -94,29 +94,28 @@ void vCreatGameData()
 {
 	char sFilePath[128];
 	BuildPath(Path_SM, sFilePath, sizeof(sFilePath), "gamedata/%s.txt", PLUGIN_NAME);
-	if (!FileExists(sFilePath))
+	if (FileExists(sFilePath)) return;
+
+	File hTemp = OpenFile(sFilePath, "w");
+	if (hTemp == null)
 	{
-		File hTemp = OpenFile(sFilePath, "w");
-		if (hTemp == null)
-		{
-			SetFailState("Plugin " ... PLUGIN_NAME ... "Something went wrong while creating the game data file!");
-		}
-		hTemp.WriteLine("\"Games\"");
-		hTemp.WriteLine("{");
-		hTemp.WriteLine("	\"left4dead2\"");
-		hTemp.WriteLine("	{");
-		hTemp.WriteLine("		\"Offsets\"");
-		hTemp.WriteLine("		{");
-		hTemp.WriteLine("			\"CGrenadeLauncher_Projectile->m_bCollideWithTeammates\"");
-		hTemp.WriteLine("			{");
-		hTemp.WriteLine("				\"windows\"		\"6792\"");
-		hTemp.WriteLine("				\"linux\"		\"6784\"");
-		hTemp.WriteLine("			}");
-		hTemp.WriteLine("		}");
-		hTemp.WriteLine("	}");
-		hTemp.WriteLine("}");
-		delete hTemp;
+		SetFailState("Plugin " ... PLUGIN_NAME ... "Something went wrong while creating the game data file!");
 	}
+	hTemp.WriteLine("\"Games\"");
+	hTemp.WriteLine("{");
+	hTemp.WriteLine("	\"left4dead2\"");
+	hTemp.WriteLine("	{");
+	hTemp.WriteLine("		\"Offsets\"");
+	hTemp.WriteLine("		{");
+	hTemp.WriteLine("			\"CGrenadeLauncher_Projectile->m_bCollideWithTeammates\"");
+	hTemp.WriteLine("			{");
+	hTemp.WriteLine("				\"windows\"		\"6792\"");
+	hTemp.WriteLine("				\"linux\"		\"6784\"");
+	hTemp.WriteLine("			}");
+	hTemp.WriteLine("		}");
+	hTemp.WriteLine("	}");
+	hTemp.WriteLine("}");
+	delete hTemp;
 }
 
 stock ConVar CreateConVarHook(const char[] name,
@@ -139,7 +138,3 @@ stock ConVar CreateConVarHook(const char[] name,
 	
 	return cv;
 }
-
-
-
-
