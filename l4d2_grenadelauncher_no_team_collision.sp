@@ -1,14 +1,12 @@
 #pragma semicolon 1
 #pragma newdecls required
 #include <sourcemod>
-// #include <sdkhooks>
 #include <dhooks>
 
 #define PLUGIN_NAME			"l4d2_genade_launcher_no_collision"
 #define PLUGIN_VERSION 	"1.2"
 
 bool 
-	// g_bLinuxOS,
 	g_bEnable;
 
 DynamicDetour g_hGLPJCollideWithTeammatesThink;
@@ -26,19 +24,6 @@ methodmap GameDataWrapper < GameData {
 		int offset = this.Super.GetOffset(key);
 		if (offset == -1) SetFailState("Missing offset \"%s\"", key);
 		return offset;
-	}
-	public DynamicDetour CreateDetourOrFail(
-			const char[] name,
-			DHookCallback preHook = INVALID_FUNCTION,
-			DHookCallback postHook = INVALID_FUNCTION) {
-		DynamicDetour hSetup = DynamicDetour.FromConf(this, name);
-		if (!hSetup)
-			SetFailState("Missing detour setup \"%s\"", name);
-		if (preHook != INVALID_FUNCTION && !hSetup.Enable(Hook_Pre, preHook))
-			SetFailState("Failed to pre-detour \"%s\"", name);
-		if (postHook != INVALID_FUNCTION && !hSetup.Enable(Hook_Post, postHook))
-			SetFailState("Failed to post-detour \"%s\"", name);
-		return hSetup;
 	}
 }
 
@@ -69,11 +54,11 @@ public void OnPluginStart()
 	vCreatGameData();
 	
 	GameDataWrapper gd = new GameDataWrapper(PLUGIN_NAME);
-	// g_bLinuxOS = gd.GetOffset("OS") == 1;
+	g_iOff_m_bCollideWithTeammates = gd.GetOffset("CGrenadeLauncher_Projectile->m_bCollideWithTeammates");
 	
 	// delete gd.CreateDetourOrFail("CGrenadeLauncher_Projectile::ExplodeTouch", DTR_GrenadeLauncher_Projectile_ExplodeTouch_Pre);
 
-	g_hGLPJCollideWithTeammatesThink = gd.CreateDetourOrFail("CGrenadeLauncher_Projectile::CollideWithTeammatesThink", DTR_CGrenadeLauncher_Projectile_CollideWithTeammatesThink_Pre);
+	// g_hGLPJCollideWithTeammatesThink = gd.CreateDetourOrFail("CGrenadeLauncher_Projectile::CollideWithTeammatesThink", DTR_CGrenadeLauncher_Projectile_CollideWithTeammatesThink_Pre);
 	delete gd;
 	CreateConVar( PLUGIN_NAME ... "_version", PLUGIN_VERSION, "L4D2 Genade Launcher No Team Collision Version", FCVAR_DONTRECORD|FCVAR_NOTIFY);
 
@@ -88,19 +73,11 @@ public void OnPluginStart()
 	//AutoExecConfig(true, PLUGIN_NAME);
 }
 
-public void OnPluginEnd()
-{
-	DHookCallback preHook = INVALID_FUNCTION;
-	g_hGLPJCollideWithTeammatesThink.Disable(Hook_Pre, preHook);
-	delete g_hGLPJCollideWithTeammatesThink;
-}
-
 void ConVarChanged_Cvars(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	g_bEnable = convar.BoolValue;
 }
 
-/*
 public void OnEntityCreated(int entity, const char[] classname)
 {
 	if (!g_bEnable) return;
@@ -112,23 +89,9 @@ void NextFrame_GLPJ_Spawn(int entity)
 {
 	entity = EntRefToEntIndex(entity);
 	if (entity == INVALID_ENT_REFERENCE) return;
-	
-	
 	//  Linux ((_BYTE *)this + 6784) 
 	//  Windows((_BYTE *)this + 6792) 
-	// SetEntData(entity, 6784 + (view_as<int>(!g_bLinuxOS) << 3), 1, 1, true);
-	
-}
-*/
-
-MRESReturn DTR_CGrenadeLauncher_Projectile_CollideWithTeammatesThink_Pre(int pThis, DHookReturn hReturn)
-{
-	if(g_bEnable)
-	{
-		hReturn.Value = pThis;
-		return MRES_Supercede;
-	}
-	return MRES_Ignored;
+	SetEntData(entity, g_iOff_m_bCollideWithTeammates, false, 1, true);
 }
 
 void vCreatGameData()
@@ -149,30 +112,10 @@ void vCreatGameData()
 		hTemp.WriteLine("	{");
 		hTemp.WriteLine("		\"Offsets\"");
 		hTemp.WriteLine("		{");
-		hTemp.WriteLine("			\"OS\"");
+		hTemp.WriteLine("			\"CGrenadeLauncher_Projectile->m_bCollideWithTeammates\"");
 		hTemp.WriteLine("			{");
-		hTemp.WriteLine("				\"windows\"		\"0\"");
-		hTemp.WriteLine("				\"linux\"		\"1\"");
-		hTemp.WriteLine("			}");
-		hTemp.WriteLine("		}");
-		hTemp.WriteLine("		\"Functions\"");
-		hTemp.WriteLine("		{");
-		hTemp.WriteLine("			\"CGrenadeLauncher_Projectile::CollideWithTeammatesThink\"");
-		hTemp.WriteLine("			{");
-		hTemp.WriteLine("				\"signature\"		\"CGrenadeLauncher_Projectile::CollideWithTeammatesThink\"");
-		hTemp.WriteLine("				\"callconv\"		\"thiscall\"");
-		hTemp.WriteLine("				\"return\"			\"int\"");
-		hTemp.WriteLine("				\"this\"			\"entity\"");
-		hTemp.WriteLine("			}");
-		hTemp.WriteLine("		}");
-		hTemp.WriteLine("		\"Signatures\"");
-		hTemp.WriteLine("		{");
-		hTemp.WriteLine("			\"CGrenadeLauncher_Projectile::CollideWithTeammatesThink\"");
-		hTemp.WriteLine("			{");
-		hTemp.WriteLine("				\"library\"	\"server\"");
-		hTemp.WriteLine("				\"linux\"	\"@_ZN27CGrenadeLauncher_Projectile25CollideWithTeammatesThinkEv\"");
-		hTemp.WriteLine("				\"windows\"	\"\\xC6\\x81\\x88\\x1A\\x00\\x00\\x01\"");
-		hTemp.WriteLine("				/* Thanks 洛琪 Find Windows Signature */");
+		hTemp.WriteLine("				\"windows\"		\"6792\"");
+		hTemp.WriteLine("				\"linux\"		\"6784\"");
 		hTemp.WriteLine("			}");
 		hTemp.WriteLine("		}");
 		hTemp.WriteLine("	}");
@@ -201,3 +144,4 @@ stock ConVar CreateConVarHook(const char[] name,
 	
 	return cv;
 }
+
