@@ -1,7 +1,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 #include <sourcemod>
-#include <dhooks>
+#include <sdkhooks>
 
 #define PLUGIN_NAME			"l4d2_genade_launcher_no_collision"
 #define PLUGIN_VERSION 	"1.2"
@@ -139,6 +139,7 @@ stock ConVar CreateConVarHook(const char[] name,
 	
 	return cv;
 }
+
 
 
 
