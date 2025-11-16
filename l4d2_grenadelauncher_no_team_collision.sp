@@ -79,13 +79,12 @@ public void OnEntityCreated(int entity, const char[] classname)
 {
 	if (!g_bEnable) return;
 	if(strncmp(classname, "grenade_launcher_projectile", 27) == 0)
-		RequestFrame(NextFrame_GLPJ_Spawn, EntIndexToEntRef(entity));
+		SDKHook(entity, SDKHook_ThinkPost, OnThinkPost);
 }
 
-void NextFrame_GLPJ_Spawn(int entity)
+void OnThinkPost(int entity)
 {
-	entity = EntRefToEntIndex(entity);
-	if (entity == INVALID_ENT_REFERENCE) return;
+	if (!g_bEnable || entity <= MaxClients || !IsValidEntity(entity)) return;
 	//  Linux ((_BYTE *)this + 6784) 
 	//  Windows((_BYTE *)this + 6792) 
 	SetEntData(entity, g_iOff_m_bCollideWithTeammates, false, 1, true);
@@ -140,5 +139,6 @@ stock ConVar CreateConVarHook(const char[] name,
 	
 	return cv;
 }
+
 
 
