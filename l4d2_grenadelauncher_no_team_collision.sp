@@ -1,15 +1,15 @@
+//  Linux ((_BYTE *)this + 6784) 
+//  Windows((_BYTE *)this + 6792) 
 #pragma semicolon 1
 #pragma newdecls required
 #include <sourcemod>
-#include <sdkhooks>
+#include <sourcescramble>
 
 #define PLUGIN_NAME			"l4d2_genade_launcher_no_collision"
-#define PLUGIN_VERSION 		"1.2"
+#define PLUGIN_VERSION 		"1.3"
 
-bool 
-	g_bEnable;
-int g_iOff_m_bCollideWithTeammates = -1;
-
+MemoryPatch g_patchCollideWithTeammatesThink;
+bool g_bEnable;
 // https://github.com/Target5150/MoYu_Server_Stupid_Plugins/blob/master/include/%40Forgetest/gamedatawrapper.inc
 methodmap GameDataWrapper < GameData {
 	public GameDataWrapper(const char[] file) {
@@ -17,13 +17,11 @@ methodmap GameDataWrapper < GameData {
 		if (!gd) SetFailState("Missing gamedata \"%s\"", file);
 		return view_as<GameDataWrapper>(gd);
 	}
-	property GameData Super {
-		public get() { return view_as<GameData>(this); }
-	}
-	public int GetOffset(const char[] key) {
-		int offset = this.Super.GetOffset(key);
-		if (offset == -1) SetFailState("Missing offset \"%s\"", key);
-		return offset;
+	public MemoryPatch CreatePatchOrFail(const char[] name, bool enable = false) {
+		MemoryPatch hPatch = MemoryPatch.CreateFromConf(this, name);
+		if (!(enable ? hPatch.Enable() : hPatch.Validate()))
+			SetFailState("Failed to patch \"%s\"", name);
+		return hPatch;
 	}
 }
 
@@ -54,8 +52,8 @@ public void OnPluginStart()
 	vCreatGameData();
 	
 	GameDataWrapper gd = new GameDataWrapper(PLUGIN_NAME);
-	g_iOff_m_bCollideWithTeammates = gd.GetOffset("CGrenadeLauncher_Projectile->m_bCollideWithTeammates");
-	// g_hGLPJCollideWithTeammatesThink = gd.CreateDetourOrFail("CGrenadeLauncher_Projectile::CollideWithTeammatesThink", DTR_CGrenadeLauncher_Projectile_CollideWithTeammatesThink_Pre);
+	g_patchCollideWithTeammatesThink = gd.CreatePatchOrFail("CGrenadeLauncher_Projectile::CollideWithTeammatesThink", true);
+	
 	delete gd;
 
 	CreateConVar( PLUGIN_NAME ... "_version", PLUGIN_VERSION, "L4D2 Genade Launcher No Team Collision Version", FCVAR_DONTRECORD|FCVAR_NOTIFY);
@@ -73,21 +71,15 @@ public void OnPluginStart()
 void ConVarChanged_Cvars(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	g_bEnable = convar.BoolValue;
-}
+	if (g_bEnable != convar.BoolValue)
+	{
+		g_bEnable = convar.BoolValue;
 
-public void OnEntityCreated(int entity, const char[] classname)
-{
-	if (!g_bEnable) return;
-	if(strncmp(classname, "grenade_launcher_projectile", 27) == 0)
-		SDKHook(entity, SDKHook_ThinkPost, OnThinkPost);
-}
-
-void OnThinkPost(int entity)
-{
-	if (!g_bEnable || entity <= MaxClients || !IsValidEntity(entity)) return;
-	//  Linux ((_BYTE *)this + 6784) 
-	//  Windows((_BYTE *)this + 6792) 
-	SetEntData(entity, g_iOff_m_bCollideWithTeammates, false, 1, true);
+		if (g_bEnable)
+			g_patchCollideWithTeammatesThink.Enable();
+		else
+			g_patchCollideWithTeammatesThink.Disable();
+	}
 }
 
 void vCreatGameData()
@@ -105,12 +97,32 @@ void vCreatGameData()
 	hTemp.WriteLine("{");
 	hTemp.WriteLine("	\"left4dead2\"");
 	hTemp.WriteLine("	{");
-	hTemp.WriteLine("		\"Offsets\"");
+	hTemp.WriteLine("		\"MemPatches\"");
 	hTemp.WriteLine("		{");
-	hTemp.WriteLine("			\"CGrenadeLauncher_Projectile->m_bCollideWithTeammates\"");
+	hTemp.WriteLine("			\"CGrenadeLauncher_Projectile::CollideWithTeammatesThink\"");
 	hTemp.WriteLine("			{");
-	hTemp.WriteLine("				\"windows\"		\"6792\"");
-	hTemp.WriteLine("				\"linux\"		\"6784\"");
+	hTemp.WriteLine("				\"signature\"		\"CGrenadeLauncher_Projectile::CollideWithTeammatesThink\"");
+	hTemp.WriteLine("				\"linux\"");
+	hTemp.WriteLine("				{");
+	hTemp.WriteLine("					\"offset\"	\"6h\"");
+	hTemp.WriteLine("					\"verify\"	\"\\xC6\\x80\\x80\\x1A\\x00\\x00\\x01\"");
+	hTemp.WriteLine("					\"patch\"	\"\\xC6\\x80\\x80\\x1A\\x00\\x00\\x00\"");
+	hTemp.WriteLine("				}");
+	hTemp.WriteLine("				\"windows\"");
+	hTemp.WriteLine("				{");
+	hTemp.WriteLine("					\"offset\"	\"0h\"");
+	hTemp.WriteLine("					\"verify\"	\"\\xC6\\x81\\x88\\x1A\\x00\\x00\\x01\"");
+	hTemp.WriteLine("					\"patch\"	\"\\xC6\\x81\\x88\\x1A\\x00\\x00\\x00\"");
+	hTemp.WriteLine("				}");
+	hTemp.WriteLine("			}");
+	hTemp.WriteLine("		}");
+	hTemp.WriteLine("		\"Signatures\"");
+	hTemp.WriteLine("		{");
+	hTemp.WriteLine("			\"CGrenadeLauncher_Projectile::CollideWithTeammatesThink\"");
+	hTemp.WriteLine("			{");
+	hTemp.WriteLine("				\"library\"		\"server\"");
+	hTemp.WriteLine("				\"linux\"		\"@_ZN27CGrenadeLauncher_Projectile25CollideWithTeammatesThinkEv\"");
+	hTemp.WriteLine("				\"windows\"		\"\\xC6\\x81\\x88\\x1A\\x00\\x00\\x01\"");
 	hTemp.WriteLine("			}");
 	hTemp.WriteLine("		}");
 	hTemp.WriteLine("	}");
