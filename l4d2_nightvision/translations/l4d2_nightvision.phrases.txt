@@ -1,0 +1,209 @@
+"Phrases"
+{
+    "NightVisionOn"
+    {
+        "en"    "Night Vision On"
+        "chi"   "夜视仪已开启"
+    }
+
+    "NightVisionOff"
+    {
+        "en"    "Night Vision Off"
+        "chi"   "夜视仪已关闭"
+    }
+    "NV_Prefix"
+    {
+        "en" "Night Vision"
+        "chi" "夜视仪"
+    }
+    "NV_None"
+    {
+        "en" "None"
+        "chi" "无"
+    }
+    "NV_BrightnessMenuFail"
+    {
+        "en" "Brightness menu failed: spotlight night vision is not enabled."
+        "chi" "亮度菜单打开失败，聚光灯夜视仪未开启。"
+    }
+    "NV_MenuTitle"
+    {
+    	   "#format"	"{1:s}"
+        "en" "Night Vision Settings\nCurrent type: {1}"
+        "chi" "夜视仪设置\n当前类型: {1}"
+    }
+    "NV_TypeYellow"
+    {
+        "en" "Yellow Filter"
+        "chi" "黄色滤镜夜视仪"
+    }
+    "NV_TypeSpotlight"
+    {
+        "en" "Spotlight"
+        "chi" "聚光灯夜视仪"
+    }
+    "NV_TypeFilter"
+    {
+        "en" "Third-party Filter"
+        "chi" "第三方滤镜夜视仪"
+    }
+    "NV_TypeNameYellow"
+    {
+        "en" "Yellow Filter"
+        "chi" "黄色滤镜"
+    }
+    "NV_TypeNameSpotlight"
+    {
+        "en" "Spotlight"
+        "chi" "聚光灯"
+    }
+    "NV_TypeNameFilter"
+    {
+        "en" "Third-party Filter"
+        "chi" "第三方滤镜"
+    }
+    "NV_TypeNameUnknown"
+    {
+        "en" "Unknown"
+        "chi" "未知"
+    }
+    "NV_BrightnessDisplay"
+    {
+    	   "#format"	"{1:d},{2:d}"
+        "en" "Brightness: {1} (Current: {2})"
+        "chi" "亮度: {1} (当前: {2})"
+    }
+    "NV_DecreaseBrightness"
+    {
+        "en" "Decrease Brightness"
+        "chi" "减弱亮度"
+    }
+    "NV_IncreaseBrightness"
+    {
+        "en" "Increase Brightness"
+        "chi" "增强亮度"
+    }
+    "NV_FilterCurrent"
+    {
+        "#format"	"{1:s}"
+        "en" "Current Filter: {1}"
+        "chi" "当前滤镜: {1}"
+    }
+    "NV_FilterIntensity"
+    {
+    	   "#format"	"{1:.1f}"
+        "en" "Intensity: {1}"
+        "chi" "强度: {1}"
+    }
+    "NV_IncreaseIntensity"
+    {
+        "en" "Increase Intensity"
+        "chi" "增加强度"
+    }
+    "NV_DecreaseIntensity"
+    {
+        "en" "Decrease Intensity"
+        "chi" "减少强度"
+    }
+    "NV_ToggleOff"
+    {
+        "en" "Disable Night Vision"
+        "chi" "关闭夜视仪"
+    }
+    "NV_ToggleOn"
+    {
+        "en" "Enable Night Vision"
+        "chi" "开启夜视仪"
+    }
+    "NV_QuickToggle"
+    {
+        "en" "Quick Switch to Last Used"
+        "chi" "快速切换至上一次使用的夜视仪"
+    }
+    "NV_BrightnessMinReached"
+    {
+        "en" "Minimum brightness reached."
+        "chi" "已达到最弱亮度"
+    }
+    "NV_BrightnessDecreased"
+    {
+        "#format"	"{1:d}"
+        "en" "Brightness decreased to: {1}"
+        "chi" "亮度已减弱至: {1}"
+    }
+    "NV_BrightnessMaxReached"
+    {
+        "en" "Maximum brightness reached."
+        "chi" "已达到最强亮度"
+    }
+    "NV_BrightnessIncreased"
+    {
+    	   "#format"	"{1:d}"
+        "en" "Brightness increased to: {1}"
+        "chi" "亮度已增强至: {1}"
+    }
+    "NV_BrightnessMenuTitle"
+    {
+        "#format"	"{1:d}"
+        "en" "Night Vision Brightness\nCurrent brightness: {1}\nType !nvbright to open menu"
+        "chi" "夜视仪亮度设置\n当前亮度值: {1}\n聊天窗口输入 !nvbright 打开菜单"
+    }
+    "NV_BrightnessMinOption"
+    {
+        "en" "Minimum brightness reached"
+        "chi" "已达到最弱亮度"
+    }
+    "NV_BrightnessDecreaseOption"
+    {
+        "en" "Decrease brightness"
+        "chi" "减弱夜视仪亮度"
+    }
+    "NV_BrightnessIncreaseOption"
+    {
+        "en" "Increase brightness"
+        "chi" "增强夜视仪亮度"
+    }
+    "NV_TypeSwitched"
+    {
+    	   "#format"	"{1:s}"
+        "en" "Switched to {1} mode"
+        "chi" "已切换到{1}模式"
+    }
+    "NV_SwitchedFromTo"
+    {
+        "#format"	"{1:s},{2:s}"
+        "en" "Switched from {1} to {2}"
+        "chi" "已从 {1} 切换到 {2}"
+    }
+    "NV_LastUsedSame"
+    {
+        "en" "Last used night vision is same as current or invalid."
+        "chi" "上一次使用的夜视仪与当前相同或无效"
+    }
+    "NV_NoFilters"
+    {
+        "en" "No filter templates available."
+        "chi" "没有可用的滤镜模板"
+    }
+    "NV_FilterSelected"
+    {
+        "#format"	"{1:s}"
+        "en" "Filter selected: {1}"
+        "chi" "已选择滤镜: {1}"
+    }
+    "NV_FilterSelectFirst"
+    {
+        "en" "Please select a filter template first."
+        "chi" "请先选择一个滤镜模板"
+    }
+    "NV_FilterNotFound"
+    {
+        "en" "Selected filter template not found."
+        "chi" "找不到选择的滤镜模板"
+    }
+    "NV_FilterMenuTitle"
+    {
+        "en" "Select Filter Template\n "
+        "chi" "选择滤镜模板\n "
+    }
+}
