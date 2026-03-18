@@ -9,19 +9,19 @@
 
 
 #define PLUGIN_NAME		        	"[L4D2] Psychotic Witch"
-#define PLUGIN_VERSION 	      	"1.3"
+#define PLUGIN_VERSION 	      		"1.3"
 #define PLUGIN_AUTHOR	        	"Mortiegama"
-#define PLUGIN_DESCRIPTION    	"Brining a new meaning of fear to the most dangerous infected."
+#define PLUGIN_DESCRIPTION    		"Brining a new meaning of fear to the most dangerous infected."
 #define PLUGIN_LINK		        	"https://forums.alliedmods.net/showthread.php?p=2107926#post2107926"
 
 
-#define CVAR_FLAGS                    FCVAR_NOTIFY
-#define MAXENTITIES                   2048
-#define TEAM_SURVIVOR				          2
-#define STRING_LENGHT			        	  56
-#define MODEL_PROPANE				          "models/props_junk/propanecanister001a.mdl"
+#define CVAR_FLAGS                  FCVAR_NOTIFY
+#define MAXENTITIES                 2048
+#define TEAM_SURVIVOR				2
+#define STRING_LENGHT               56
+#define MODEL_PROPANE               "models/props_junk/propanecanister001a.mdl"
 
-float SLAP_VERTICAL_MULTIPLIER		=	1.5;
+float SLAP_VERTICAL_MULTIPLIER	=	1.5;
 
 // ===========================================
 // Witch Setup
@@ -144,7 +144,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-  InitData();
+	InitData();
 	CreateConVar("l4d_pwm_version", PLUGIN_VERSION, "Pscyhotic Witch Version", FCVAR_SPONLY|FCVAR_DONTRECORD|FCVAR_NOTIFY);
 
 	// ======================================
@@ -226,7 +226,7 @@ public void OnPluginStart()
 	HookEvent("witch_killed", Event_WitchKilled);
 	HookEvent("player_death", Event_PlayerDeath);
 	
-	AutoExecConfig(true, "l4d2_Psychotic_Witch");
+	// AutoExecConfig(true, "l4d2_Psychotic_Witch");
 	
 	GetCvars();
 	g_cvAssimilation.AddChangeHook(ConVarChanged_Cvars);

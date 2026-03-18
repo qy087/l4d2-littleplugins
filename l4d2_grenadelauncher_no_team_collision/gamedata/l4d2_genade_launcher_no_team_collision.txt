@@ -1,0 +1,34 @@
+"Games"
+{
+	"left4dead2"
+	{
+		"MemPatches"
+		{
+			"CGrenadeLauncher_Projectile::CollideWithTeammatesThink"
+			{
+				"signature"		"CGrenadeLauncher_Projectile::CollideWithTeammatesThink"
+				"linux"
+				{
+					"offset"	"6h"
+					"verify"	"\xC6\x80\x80\x1A\x00\x00\x01"
+					"patch"	"\xC6\x80\x80\x1A\x00\x00\x00"
+				}
+				"windows"
+				{
+					"offset"	"0h"
+					"verify"	"\xC6\x81\x88\x1A\x00\x00\x01"
+					"patch"	"\xC6\x81\x88\x1A\x00\x00\x00"
+				}
+			}
+		}
+		"Signatures"
+		{
+			"CGrenadeLauncher_Projectile::CollideWithTeammatesThink"
+			{
+				"library"		"server"
+				"linux"		"@_ZN27CGrenadeLauncher_Projectile25CollideWithTeammatesThinkEv"
+				"windows"	"\xC6\x81\x88\x1A\x00\x00\x01"
+			}
+		}
+	}
+}

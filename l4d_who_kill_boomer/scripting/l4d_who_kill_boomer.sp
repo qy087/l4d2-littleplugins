@@ -11,18 +11,18 @@ bool
 	
 enum struct Player
 {
-	int attackerid;
-	int boomerid;
-	Handle hTimer;
+	int m_iAttacker;
+	int m_iBoomer;
+	Handle m_hTimer;
 	void Clear(){
-		this.attackerid = 0;
-		this.boomerid = 0;
-		delete this.hTimer;
+		this.m_iAttacker = 0;
+		this.m_iBoomer = 0;
+		delete this.m_hTimer;
 	}
 }
 
 Player 
-	g_ePlayer[MAXPLAYERS+1];
+	g_ePlayer[33];
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
 	EngineVersion test = GetEngineVersion();
@@ -87,7 +87,7 @@ void ConVarChanged_Cvars(ConVar convar, const char[] oldValue, const char[] newV
 void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 { 
 	int client = GetClientOfUserId(event.GetInt("userid"));
-	if(!IsValidClient(client)) return;
+	if (!IsValidClient(client)) return;
 	g_ePlayer[client].Clear();
 }
 
@@ -100,10 +100,10 @@ void Event_Player_Death(Event event, const char[] name, bool dontBroadcast)
 {
 	int victim = GetClientOfUserId(event.GetInt("userid"));
 	int attacker = GetClientOfUserId(event.GetInt("attacker"));
-	if(!IsValidClient(victim) || GetClientTeam(victim) != L4D_TEAM_INFECTED || !IsValidClient(attacker) || GetClientTeam(attacker) != L4D_TEAM_SURVIVOR) return;
+	if (!IsValidClient(victim) || GetClientTeam(victim) != L4D_TEAM_INFECTED || !IsValidClient(attacker) || GetClientTeam(attacker) != L4D_TEAM_SURVIVOR) return;
 	
-	if(iGetPlayerZombieClass(victim) != 2) return; 
-	g_ePlayer[victim].attackerid = attacker;
+	if (iGetPlayerZombieClass(victim) != 2) return; 
+	g_ePlayer[victim].m_iAttacker = attacker;
 	
 }
 
@@ -112,20 +112,20 @@ void vDeleteTimer()
 	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i)) 
-			delete g_ePlayer[i].hTimer;
+			delete g_ePlayer[i].m_hTimer;
 	}
 }
 
 public void L4D2_OnStagger_Post(int client, int source)
 {
-	if(!g_bEnable || !IsValidClient(source) || GetClientTeam(source) != L4D_TEAM_INFECTED || !IsValidClient(client) || GetClientTeam(client) != L4D_TEAM_SURVIVOR || L4D_IsPlayerIncapacitated(client) || L4D_IsPlayerHangingFromLedge(client)) return;
+	if (!g_bEnable || !IsValidClient(source) || GetClientTeam(source) != L4D_TEAM_INFECTED || !IsValidClient(client) || GetClientTeam(client) != L4D_TEAM_SURVIVOR || L4D_IsPlayerIncapacitated(client) || L4D_IsPlayerHangingFromLedge(client)) return;
 	
-	if(iGetPlayerZombieClass(source) != 2) return; 
-	int attacker = g_ePlayer[source].attackerid;
+	if (iGetPlayerZombieClass(source) != 2) return; 
+	int attacker = g_ePlayer[source].m_iAttacker;
 	if (!IsValidClient(attacker) || GetClientTeam(attacker) != L4D_TEAM_SURVIVOR) return; 
 
-	g_ePlayer[client].boomerid = source;
-	delete g_ePlayer[attacker].hTimer;
+	g_ePlayer[client].m_iBoomer = source;
+	delete g_ePlayer[attacker].m_hTimer;
 	vAnnounceTimer(source, attacker, 1.5);
 
 }
@@ -134,7 +134,7 @@ void vAnnounceTimer(int client, int attacker, float timer)
 {
 	if (!IsValidClient(attacker)) return;
 	DataPack hPack;
-	g_ePlayer[attacker].hTimer = CreateDataTimer(timer, AnnounceMsg, hPack, TIMER_FLAG_NO_MAPCHANGE);
+	g_ePlayer[attacker].m_hTimer = CreateDataTimer(timer, AnnounceMsg, hPack, TIMER_FLAG_NO_MAPCHANGE);
 	hPack.WriteCell(client);
 	hPack.WriteCell(attacker);
 }
@@ -146,24 +146,21 @@ Action AnnounceMsg(Handle timer, DataPack hPack)
 	int attacker = hPack.ReadCell();
 	// delete hPack;
 	
-	g_ePlayer[attacker].hTimer = null;
+	g_ePlayer[attacker].m_hTimer = null;
 	if (!IsValidClient(attacker))
 		return Plugin_Stop;
 		
 	int iTotalVictims = 0;
-	int[] victims = new int[MaxClients];
-	char sVictimNames[MAXPLAYERS+1][MAX_NAME_LENGTH];
-	
+	char sVictimNames[33][MAX_NAME_LENGTH];
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if (!IsClientInGame(i) || g_ePlayer[i].boomerid != victim || GetClientTeam(i) != L4D_TEAM_SURVIVOR || i == attacker)
+		if (!IsClientInGame(i) || g_ePlayer[i].m_iBoomer != victim || GetClientTeam(i) != L4D_TEAM_SURVIVOR || i == attacker)
 			continue;
 			
-		victims[iTotalVictims] = i;
 		GetClientName(i, sVictimNames[iTotalVictims], MAX_NAME_LENGTH);
 		if (!IsFakeClient(i))
 			PrintToChat(i, "\x03Ema̲\x01: \x04%N\x01 打胖子炸到了\x04你", attacker);
-		g_ePlayer[i].Clear();
+		// g_ePlayer[i].Clear();
 		iTotalVictims++;
 	}
 	
@@ -185,7 +182,7 @@ Action AnnounceMsg(Handle timer, DataPack hPack)
 			}
 			
 			char sSur[32];
-			FormatEx(sSur, sizeof(sSur), " \x04%d 位队友", iTotalVictims);
+			FormatEx(sSur, sizeof(sSur), " \x04%d \x01位队友", iTotalVictims);
 			StrCat(sLine, sizeof(sLine), sSur);
 			
 			PrintToChat(attacker, "%s", sLine);

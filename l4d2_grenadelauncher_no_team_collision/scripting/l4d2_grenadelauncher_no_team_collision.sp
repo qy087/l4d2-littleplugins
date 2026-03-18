@@ -53,7 +53,6 @@ public void OnPluginStart()
 	
 	GameDataWrapper gd = new GameDataWrapper(PLUGIN_NAME);
 	g_patchCollideWithTeammatesThink = gd.CreatePatchOrFail("CGrenadeLauncher_Projectile::CollideWithTeammatesThink", true);
-	
 	delete gd;
 
 	CreateConVar( PLUGIN_NAME ... "_version", PLUGIN_VERSION, "L4D2 Genade Launcher No Team Collision Version", FCVAR_DONTRECORD|FCVAR_NOTIFY);
@@ -70,7 +69,6 @@ public void OnPluginStart()
 
 void ConVarChanged_Cvars(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	g_bEnable = convar.BoolValue;
 	if (g_bEnable != convar.BoolValue)
 	{
 		g_bEnable = convar.BoolValue;
