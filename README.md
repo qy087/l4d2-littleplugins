@@ -13,3 +13,6 @@ Make/adapt/fix some plugins
     * 生还者打爆胖子误炸队友时显示内鬼(Print Boomer killer on teammate splash.)
 * <b>[l4d2_nightvision](/l4d2_nightvision)</b>
     * 多样夜视仪(Enhanced Nightvision.)
+* <b>[l4d2_weapon_csgo_reload_modify](/l4d2_weapon_csgo_reload_modify) <b>By:</b>[Harry Potter](https://github.com/fbef0102)</b>
+    * 内存补丁版本仿CSGO / CS2 换弹机制(Reload like csgo/cs2 weapon.)
+	

@@ -1,0 +1,53 @@
+//2.4-2026/4/4
+//windows signature credit: blueblur0730 https://github.com/blueblur0730/modified-plugins/blob/main/source/l4d2_cs_style_reload/gamedata/l4d2_cs_style_reload.txt
+"Games"
+{
+	"left4dead2"
+	{
+		"MemPatches"
+		{
+			"CTerrorGun::Reload__ClipToZero"
+			{
+				"signature"		"CTerrorGun::Reload"
+				"linux"
+				{
+					"offset"	"342h"
+					"verify"	"\xC7\x83\x20\x14\x00\x00\x00\x00\x00\x00"
+					"patch"	"\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90"
+				}
+				"windows"
+				{
+					"offset"	"24Eh"
+					"verify"	"\xC7\x86\x14\x14\x00\x00\x00\x00\x00\x00"
+					"patch"	"\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90"
+				}
+			}
+			"CTerrorGun::Reload__AddClip"
+			{
+				"signature"		"CTerrorGun::Reload"
+				"linux"
+				{
+					"offset"	"1DDh"
+					"verify"	"\x03\x83\x20\x14\x00\x00"
+					"patch"	"\x90\x90\x90\x90\x90\x90"
+				}
+				"windows"
+				{
+					"offset"	"217h"
+					"verify"	"\x03\xD0"
+					"patch"	"\x8B\xD0"
+				}
+			}
+		}
+		"Signatures"
+		{
+			"CTerrorGun::Reload"
+			{
+				"library"		"server"
+				"linux"		"@_ZN10CTerrorGun6ReloadEv"
+				"windows"		"\x55\x8B\xEC\x83\xEC\x2A\x53\x56\x8B\xF1\xE8\x2A\x2A\x2A\x2A\x8B\xD8\x85\xDB\x0F\x84\x2A\x2A\x2A\x2A\x8B\x83"
+				/* 55 8B EC 83 EC ? 53 56 8B F1 E8 ? ? ? ? 8B D8 85 DB 0F 84 ? ? ? ? 8B 83 */
+			}
+		}
+	}
+}
