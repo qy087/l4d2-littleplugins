@@ -91,9 +91,9 @@ methodmap GameDataWrapper < GameData {
 public void OnPluginStart()
 {
 	vCheckAndCreatGameData();
-	GameDataWrapper gd 		= new GameDataWrapper("l4d2_weapon_csgo_reload");
-	g_hPatchAddClip			= gd.CreatePatchOrFail("CTerrorGun::Reload__AddClip", true);
-	g_hPatchClipToZero 		= gd.CreatePatchOrFail("CTerrorGun::Reload__ClipToZero", true);
+	GameDataWrapper gd 		= new GameDataWrapper(PLUGIN_NAME);
+	g_hPatchAddClip			= gd.CreatePatchOrFail("CTerrorGun::Reload__AddClip", false);
+	g_hPatchClipToZero 		= gd.CreatePatchOrFail("CTerrorGun::Reload__ClipToZero", false);
 	delete gd;
 
 	g_hAmmoRifle =		FindConVar("ammo_assaultrifle_max");
@@ -116,7 +116,7 @@ public void OnPluginStart()
 	g_hAmmoSniper.AddChangeHook(ConVarChanged_AmmoCvars);
 
 	
-	// AutoExecConfig(true, PLUGIN_NAME);
+	AutoExecConfig(true, PLUGIN_NAME);
 
 	HookEvent("weapon_reload", OnWeaponReload_Event, EventHookMode_Post);
 	HookEvent("round_start", RoundStart_Event);
@@ -143,6 +143,7 @@ void ConVarChanged_Allow(ConVar convar, const char[] oldValue, const char[] newV
 		{
 			g_hPatchAddClip.Enable();
 			g_hPatchClipToZero.Enable();
+			vLoadConfig();
 		}
 		else
 		{
@@ -236,6 +237,7 @@ public void OnConfigsExecuted()
 
 void vLoadConfig()
 {
+	if (!g_bEnable) return;
 	char sPath[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, sPath, sizeof(sPath), CFG_FILE);
 	KeyValues hKV = new KeyValues(PLUGIN_NAME);
@@ -251,6 +253,15 @@ void vLoadConfig()
 		delete hKV;
 		return;
 	}
+	
+	if (!hKV.GotoFirstSubKey())
+	{
+		LogError("Config file %s missing weapon sections, using defaults", sPath);
+		vSetDefaultConfig();
+		delete hKV;
+		return;
+	}
+	vSetDefaultConfig();
 	g_bClearClipOnReload = view_as<bool>(hKV.GetNum("clear_clip_on_reload", 0));
 	if (g_bClearClipOnReload || !g_bEnable)
 	{
@@ -262,14 +273,6 @@ void vLoadConfig()
 		g_hPatchAddClip.Enable();
 		g_hPatchClipToZero.Enable();
 	}
-	if (!hKV.GotoFirstSubKey())
-	{
-		LogError("Config file %s missing weapon sections, using defaults", sPath);
-		vSetDefaultConfig();
-		delete hKV;
-		return;
-	}
-	vSetDefaultConfig();
 	do
 	{
 		char sWeaponName[32];
@@ -321,6 +324,7 @@ void vSetDefaultConfig()
 
 Action CmdListen_weapon_reparse_server(int client, const char[] command, int argc)
 {
+	if (!g_bEnable) return Plugin_Continue;
 	RequestFrame(OnNextFrame_weapon_reparse_server);
 	return Plugin_Continue;
 }
@@ -338,8 +342,9 @@ void RoundStart_Event(Event event, const char[] name, bool dontBroadcast)
 
 void OnWeaponReload_Event(Event event, const char[] name, bool dontBroadcast)
 {
+	if (!g_bEnable) return;
 	int client = GetClientOfUserId(event.GetInt("userid"));
-	if (!IsValidAliveSurvivor(client) || !g_bEnable)
+	if (!IsValidAliveSurvivor(client))
 		return;
 
 	int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
