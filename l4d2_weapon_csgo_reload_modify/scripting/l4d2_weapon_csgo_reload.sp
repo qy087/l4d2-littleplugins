@@ -5,20 +5,23 @@
 #include <left4dhooks>
 #include <sourcescramble>
 
-#define PLUGIN_NAME		"l4d2_weapon_csgo_reload"
-#define PLUGIN_VERSION	"2.4-2026/4/4"
-#define CFG_FILE		"data/" ... PLUGIN_NAME ... ".cfg"
+#define PLUGIN_NAME	   "l4d2_weapon_csgo_reload"
+#define PLUGIN_VERSION "2.4-2026/4/4"
+#define CFG_FILE	   "data/" ... PLUGIN_NAME... ".cfg"
 
-public Plugin myinfo = 
+public Plugin myinfo =
 {
-	name = "L4D2 weapon cs2 reload",
-	author = "Harry Potter & qy087",
+	name		= "L4D2 weapon cs2 reload",
+	author		= "Harry Potter & qy087",
 	description = "Reload like cs2 weapon",
-	version = PLUGIN_VERSION,
-	url = "https://steamcommunity.com/profiles/76561198026784913/"
+	version		= PLUGIN_VERSION,
+	url			= "https://steamcommunity.com/profiles/76561198026784913/"
+
+
 }
 
 bool bLate;
+
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	EngineVersion test = GetEngineVersion();
@@ -55,32 +58,37 @@ enum WeaponID
 
 #define PISTOL_RELOAD_INCAP_MULTIPLY 1.25
 
-StringMap g_smWeaponNameID;
-int g_iWeaponMaxClip[view_as<int>(ID_WEAPON_MAX)];
+StringMap	g_smWeaponNameID;
+int			g_iWeaponMaxClip[view_as<int>(ID_WEAPON_MAX)];
 
-ConVar g_hAmmoGL, g_hAmmoHunting, g_hAmmoM60, g_hAmmoRifle, g_hAmmoSmg, g_hAmmoSniper;
-int g_iAmmoGL, g_iAmmoHunting, g_iAmmoM60, g_iAmmoRifle, g_iAmmoSmg, g_iAmmoSniper;
+ConVar		g_hAmmoGL, g_hAmmoHunting, g_hAmmoM60, g_hAmmoRifle, g_hAmmoSmg, g_hAmmoSniper;
+int			g_iAmmoGL, g_iAmmoHunting, g_iAmmoM60, g_iAmmoRifle, g_iAmmoSmg, g_iAmmoSniper;
 
-bool g_bEnable;
+bool		g_bEnable;
 
-bool g_bWeaponEnable[view_as<int>(ID_WEAPON_MAX)];
-float g_fWeaponReloadTime[view_as<int>(ID_WEAPON_MAX)];
-bool g_bClearClipOnReload;
+bool		g_bWeaponEnable[view_as<int>(ID_WEAPON_MAX)];
+float		g_fWeaponReloadTime[view_as<int>(ID_WEAPON_MAX)];
+bool		g_bClearClipOnReload;
 
-float g_fClientReloadTime[MAXPLAYERS+1] = {0.0};
+float		g_fClientReloadTime[MAXPLAYERS + 1] = { 0.0 };
 
 MemoryPatch g_hPatchAddClip;
 MemoryPatch g_hPatchClipToZero;
 
-char g_sWeaponConfigName[ID_WEAPON_MAX][32];
+char		g_sWeaponConfigName[ID_WEAPON_MAX][32];
 // https://github.com/Target5150/MoYu_Server_Stupid_Plugins/blob/master/include/%40Forgetest/gamedatawrapper.inc
-methodmap GameDataWrapper < GameData {
-	public GameDataWrapper(const char[] file) {
+methodmap	GameDataWrapper < GameData
+{
+
+public 	GameDataWrapper(const char[] file)
+	{
 		GameData gd = new GameData(file);
 		if (!gd) SetFailState("Missing gamedata \"%s\"", file);
 		return view_as<GameDataWrapper>(gd);
 	}
-	public MemoryPatch CreatePatchOrFail(const char[] name, bool enable = false) {
+
+public 	MemoryPatch CreatePatchOrFail(const char[] name, bool enable = false)
+	{
 		MemoryPatch hPatch = MemoryPatch.CreateFromConf(this, name);
 		if (!(enable ? hPatch.Enable() : hPatch.Validate()))
 			SetFailState("Failed to patch \"%s\"", name);
@@ -91,22 +99,21 @@ methodmap GameDataWrapper < GameData {
 public void OnPluginStart()
 {
 	vCheckAndCreatGameData();
-	GameDataWrapper gd 		= new GameDataWrapper(PLUGIN_NAME);
-	g_hPatchAddClip			= gd.CreatePatchOrFail("CTerrorGun::Reload__AddClip", false);
-	g_hPatchClipToZero 		= gd.CreatePatchOrFail("CTerrorGun::Reload__ClipToZero", false);
+	GameDataWrapper gd = new GameDataWrapper(PLUGIN_NAME);
+	g_hPatchAddClip	   = gd.CreatePatchOrFail("CTerrorGun::Reload__AddClip", true);
+	g_hPatchClipToZero = gd.CreatePatchOrFail("CTerrorGun::Reload__ClipToZero", true);
 	delete gd;
 
-	g_hAmmoRifle =		FindConVar("ammo_assaultrifle_max");
-	g_hAmmoSmg =		FindConVar("ammo_smg_max");
-	g_hAmmoHunting =	FindConVar("ammo_huntingrifle_max");
-	g_hAmmoGL =			FindConVar("ammo_grenadelauncher_max");
-	g_hAmmoM60 =		FindConVar("ammo_m60_max");
-	g_hAmmoSniper =		FindConVar("ammo_sniperrifle_max");
-	
-	ConVar cv 	= 		CreateConVar(PLUGIN_NAME ... "_allow", "1", "0=off plugin, 1=on plugin", FCVAR_NOTIFY, true, 0.0, true, 1.0);
-	
+	g_hAmmoRifle   = FindConVar("ammo_assaultrifle_max");
+	g_hAmmoSmg	   = FindConVar("ammo_smg_max");
+	g_hAmmoHunting = FindConVar("ammo_huntingrifle_max");
+	g_hAmmoGL	   = FindConVar("ammo_grenadelauncher_max");
+	g_hAmmoM60	   = FindConVar("ammo_m60_max");
+	g_hAmmoSniper  = FindConVar("ammo_sniperrifle_max");
+
+	ConVar cv	   = CreateConVar(PLUGIN_NAME... "_allow", "1", "0=off plugin, 1=on plugin", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	g_bEnable	   = cv.BoolValue;
 	cv.AddChangeHook(ConVarChanged_Allow);
-	
 	GetAmmoCvars();
 	g_hAmmoRifle.AddChangeHook(ConVarChanged_AmmoCvars);
 	g_hAmmoSmg.AddChangeHook(ConVarChanged_AmmoCvars);
@@ -115,7 +122,6 @@ public void OnPluginStart()
 	g_hAmmoM60.AddChangeHook(ConVarChanged_AmmoCvars);
 	g_hAmmoSniper.AddChangeHook(ConVarChanged_AmmoCvars);
 
-	
 	AutoExecConfig(true, PLUGIN_NAME);
 
 	HookEvent("weapon_reload", OnWeaponReload_Event, EventHookMode_Post);
@@ -143,13 +149,13 @@ void ConVarChanged_Allow(ConVar convar, const char[] oldValue, const char[] newV
 		{
 			g_hPatchAddClip.Enable();
 			g_hPatchClipToZero.Enable();
-			vLoadConfig();
 		}
 		else
 		{
 			g_hPatchAddClip.Disable();
 			g_hPatchClipToZero.Disable();
 		}
+		vLoadConfig();
 	}
 }
 
@@ -160,12 +166,12 @@ void ConVarChanged_AmmoCvars(ConVar convar, const char[] oldValue, const char[] 
 
 void GetAmmoCvars()
 {
-	g_iAmmoRifle = g_hAmmoRifle.IntValue;
-	g_iAmmoSmg = g_hAmmoSmg.IntValue;
+	g_iAmmoRifle   = g_hAmmoRifle.IntValue;
+	g_iAmmoSmg	   = g_hAmmoSmg.IntValue;
 	g_iAmmoHunting = g_hAmmoHunting.IntValue;
-	g_iAmmoGL = g_hAmmoGL.IntValue;
-	g_iAmmoM60 = g_hAmmoM60.IntValue;
-	g_iAmmoSniper = g_hAmmoSniper.IntValue;
+	g_iAmmoGL	   = g_hAmmoGL.IntValue;
+	g_iAmmoM60	   = g_hAmmoM60.IntValue;
+	g_iAmmoSniper  = g_hAmmoSniper.IntValue;
 }
 
 void SetWeaponNameId()
@@ -209,23 +215,23 @@ void SetWeaponNameId()
 
 void SetWeaponMaxClip()
 {
-	g_iWeaponMaxClip[ID_NONE] = 0;
-	g_iWeaponMaxClip[ID_PISTOL] = L4D2_GetIntWeaponAttribute("weapon_pistol", L4D2IWA_ClipSize);
-	g_iWeaponMaxClip[ID_DUAL_PISTOL] = L4D2_GetIntWeaponAttribute("weapon_pistol", L4D2IWA_ClipSize) * 2;
-	g_iWeaponMaxClip[ID_SMG] = L4D2_GetIntWeaponAttribute("weapon_smg", L4D2IWA_ClipSize);
-	g_iWeaponMaxClip[ID_RIFLE] = L4D2_GetIntWeaponAttribute("weapon_rifle", L4D2IWA_ClipSize);
-	g_iWeaponMaxClip[ID_HUNTING_RIFLE] = L4D2_GetIntWeaponAttribute("weapon_hunting_rifle", L4D2IWA_ClipSize);
-	g_iWeaponMaxClip[ID_SMG_SILENCED] = L4D2_GetIntWeaponAttribute("weapon_smg_silenced", L4D2IWA_ClipSize);
-	g_iWeaponMaxClip[ID_SMG_MP5] = L4D2_GetIntWeaponAttribute("weapon_smg_mp5", L4D2IWA_ClipSize);
-	g_iWeaponMaxClip[ID_MAGNUM] = L4D2_GetIntWeaponAttribute("weapon_pistol_magnum", L4D2IWA_ClipSize);
-	g_iWeaponMaxClip[ID_AK47] = L4D2_GetIntWeaponAttribute("weapon_rifle_ak47", L4D2IWA_ClipSize);
-	g_iWeaponMaxClip[ID_RIFLE_DESERT] = L4D2_GetIntWeaponAttribute("weapon_rifle_desert", L4D2IWA_ClipSize);
+	g_iWeaponMaxClip[ID_NONE]			 = 0;
+	g_iWeaponMaxClip[ID_PISTOL]			 = L4D2_GetIntWeaponAttribute("weapon_pistol", L4D2IWA_ClipSize);
+	g_iWeaponMaxClip[ID_DUAL_PISTOL]	 = L4D2_GetIntWeaponAttribute("weapon_pistol", L4D2IWA_ClipSize) * 2;
+	g_iWeaponMaxClip[ID_SMG]			 = L4D2_GetIntWeaponAttribute("weapon_smg", L4D2IWA_ClipSize);
+	g_iWeaponMaxClip[ID_RIFLE]			 = L4D2_GetIntWeaponAttribute("weapon_rifle", L4D2IWA_ClipSize);
+	g_iWeaponMaxClip[ID_HUNTING_RIFLE]	 = L4D2_GetIntWeaponAttribute("weapon_hunting_rifle", L4D2IWA_ClipSize);
+	g_iWeaponMaxClip[ID_SMG_SILENCED]	 = L4D2_GetIntWeaponAttribute("weapon_smg_silenced", L4D2IWA_ClipSize);
+	g_iWeaponMaxClip[ID_SMG_MP5]		 = L4D2_GetIntWeaponAttribute("weapon_smg_mp5", L4D2IWA_ClipSize);
+	g_iWeaponMaxClip[ID_MAGNUM]			 = L4D2_GetIntWeaponAttribute("weapon_pistol_magnum", L4D2IWA_ClipSize);
+	g_iWeaponMaxClip[ID_AK47]			 = L4D2_GetIntWeaponAttribute("weapon_rifle_ak47", L4D2IWA_ClipSize);
+	g_iWeaponMaxClip[ID_RIFLE_DESERT]	 = L4D2_GetIntWeaponAttribute("weapon_rifle_desert", L4D2IWA_ClipSize);
 	g_iWeaponMaxClip[ID_SNIPER_MILITARY] = L4D2_GetIntWeaponAttribute("weapon_sniper_military", L4D2IWA_ClipSize);
-	g_iWeaponMaxClip[ID_GRENADE] = L4D2_GetIntWeaponAttribute("weapon_grenade_launcher", L4D2IWA_ClipSize);
-	g_iWeaponMaxClip[ID_SG552] = L4D2_GetIntWeaponAttribute("weapon_rifle_sg552", L4D2IWA_ClipSize);
-	g_iWeaponMaxClip[ID_M60] = L4D2_GetIntWeaponAttribute("weapon_rifle_m60", L4D2IWA_ClipSize);
-	g_iWeaponMaxClip[ID_AWP] = L4D2_GetIntWeaponAttribute("weapon_sniper_awp", L4D2IWA_ClipSize);
-	g_iWeaponMaxClip[ID_SCOUT] = L4D2_GetIntWeaponAttribute("weapon_sniper_scout", L4D2IWA_ClipSize);
+	g_iWeaponMaxClip[ID_GRENADE]		 = L4D2_GetIntWeaponAttribute("weapon_grenade_launcher", L4D2IWA_ClipSize);
+	g_iWeaponMaxClip[ID_SG552]			 = L4D2_GetIntWeaponAttribute("weapon_rifle_sg552", L4D2IWA_ClipSize);
+	g_iWeaponMaxClip[ID_M60]			 = L4D2_GetIntWeaponAttribute("weapon_rifle_m60", L4D2IWA_ClipSize);
+	g_iWeaponMaxClip[ID_AWP]			 = L4D2_GetIntWeaponAttribute("weapon_sniper_awp", L4D2IWA_ClipSize);
+	g_iWeaponMaxClip[ID_SCOUT]			 = L4D2_GetIntWeaponAttribute("weapon_sniper_scout", L4D2IWA_ClipSize);
 }
 
 public void OnConfigsExecuted()
@@ -241,7 +247,7 @@ void vLoadConfig()
 	char sPath[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, sPath, sizeof(sPath), CFG_FILE);
 	KeyValues hKV = new KeyValues(PLUGIN_NAME);
-	if(!FileExists(sPath))
+	if (!FileExists(sPath))
 	{
 		LogError("File Not Found: %s", sPath);
 		return;
@@ -253,7 +259,7 @@ void vLoadConfig()
 		delete hKV;
 		return;
 	}
-	
+
 	if (!hKV.GotoFirstSubKey())
 	{
 		LogError("Config file %s missing weapon sections, using defaults", sPath);
@@ -289,12 +295,12 @@ void vLoadConfig()
 		if (index == ID_NONE)
 			continue;
 
-		float fReloadtime = hKV.GetFloat("reload_clip_time", 1.0);
-		
+		float fReloadtime					 = hKV.GetFloat("reload_clip_time", 1.0);
+
 		g_bWeaponEnable[view_as<int>(index)] = view_as<bool>(hKV.GetNum("enable", 1));
 		if (fReloadtime >= 0.1)
 			g_fWeaponReloadTime[view_as<int>(index)] = fReloadtime;
-	} 
+	}
 	while (hKV.GotoNextKey());
 
 	delete hKV;
@@ -302,29 +308,44 @@ void vLoadConfig()
 
 void vSetDefaultConfig()
 {
-	g_bWeaponEnable[ID_SMG] = true; g_fWeaponReloadTime[ID_SMG] = 1.04;
-	g_bWeaponEnable[ID_RIFLE] = true; g_fWeaponReloadTime[ID_RIFLE] = 1.2;
-	g_bWeaponEnable[ID_HUNTING_RIFLE] = true; g_fWeaponReloadTime[ID_HUNTING_RIFLE] = 2.6;
-	g_bWeaponEnable[ID_PISTOL] = true; g_fWeaponReloadTime[ID_PISTOL] = 1.2;
-	g_bWeaponEnable[ID_DUAL_PISTOL] = true; g_fWeaponReloadTime[ID_DUAL_PISTOL] = 1.75;
-	g_bWeaponEnable[ID_SMG_SILENCED] = true; g_fWeaponReloadTime[ID_SMG_SILENCED] = 1.05;
-	g_bWeaponEnable[ID_SMG_MP5] = true; g_fWeaponReloadTime[ID_SMG_MP5] = 1.7;
-	g_bWeaponEnable[ID_AK47] = true; g_fWeaponReloadTime[ID_AK47] = 1.2;
-	g_bWeaponEnable[ID_RIFLE_DESERT] = true; g_fWeaponReloadTime[ID_RIFLE_DESERT] = 1.8;
-	g_bWeaponEnable[ID_SNIPER_MILITARY] = true; g_fWeaponReloadTime[ID_SNIPER_MILITARY] = 1.8;
-	g_bWeaponEnable[ID_GRENADE] = true; g_fWeaponReloadTime[ID_GRENADE] = 2.5;
-	g_bWeaponEnable[ID_SG552] = true; g_fWeaponReloadTime[ID_SG552] = 1.6;
-	g_bWeaponEnable[ID_M60] = true; g_fWeaponReloadTime[ID_M60] = 1.2;
-	g_bWeaponEnable[ID_AWP] = true; g_fWeaponReloadTime[ID_AWP] = 2.0;
-	g_bWeaponEnable[ID_SCOUT] = true; g_fWeaponReloadTime[ID_SCOUT] = 1.45;
-	g_bWeaponEnable[ID_MAGNUM] = true; g_fWeaponReloadTime[ID_MAGNUM] = 1.18;
-	
-	g_bClearClipOnReload = false;
+	g_bWeaponEnable[ID_SMG]					= true;
+	g_fWeaponReloadTime[ID_SMG]				= 1.04;
+	g_bWeaponEnable[ID_RIFLE]				= true;
+	g_fWeaponReloadTime[ID_RIFLE]			= 1.2;
+	g_bWeaponEnable[ID_HUNTING_RIFLE]		= true;
+	g_fWeaponReloadTime[ID_HUNTING_RIFLE]	= 2.6;
+	g_bWeaponEnable[ID_PISTOL]				= true;
+	g_fWeaponReloadTime[ID_PISTOL]			= 1.2;
+	g_bWeaponEnable[ID_DUAL_PISTOL]			= true;
+	g_fWeaponReloadTime[ID_DUAL_PISTOL]		= 1.75;
+	g_bWeaponEnable[ID_SMG_SILENCED]		= true;
+	g_fWeaponReloadTime[ID_SMG_SILENCED]	= 1.05;
+	g_bWeaponEnable[ID_SMG_MP5]				= true;
+	g_fWeaponReloadTime[ID_SMG_MP5]			= 1.7;
+	g_bWeaponEnable[ID_AK47]				= true;
+	g_fWeaponReloadTime[ID_AK47]			= 1.2;
+	g_bWeaponEnable[ID_RIFLE_DESERT]		= true;
+	g_fWeaponReloadTime[ID_RIFLE_DESERT]	= 1.8;
+	g_bWeaponEnable[ID_SNIPER_MILITARY]		= true;
+	g_fWeaponReloadTime[ID_SNIPER_MILITARY] = 1.8;
+	g_bWeaponEnable[ID_GRENADE]				= true;
+	g_fWeaponReloadTime[ID_GRENADE]			= 2.5;
+	g_bWeaponEnable[ID_SG552]				= true;
+	g_fWeaponReloadTime[ID_SG552]			= 1.6;
+	g_bWeaponEnable[ID_M60]					= true;
+	g_fWeaponReloadTime[ID_M60]				= 1.2;
+	g_bWeaponEnable[ID_AWP]					= true;
+	g_fWeaponReloadTime[ID_AWP]				= 2.0;
+	g_bWeaponEnable[ID_SCOUT]				= true;
+	g_fWeaponReloadTime[ID_SCOUT]			= 1.45;
+	g_bWeaponEnable[ID_MAGNUM]				= true;
+	g_fWeaponReloadTime[ID_MAGNUM]			= 1.18;
+
+	g_bClearClipOnReload					= false;
 }
 
 Action CmdListen_weapon_reparse_server(int client, const char[] command, int argc)
 {
-	if (!g_bEnable) return Plugin_Continue;
 	RequestFrame(OnNextFrame_weapon_reparse_server);
 	return Plugin_Continue;
 }
@@ -366,7 +387,7 @@ void OnWeaponReload_Event(Event event, const char[] name, bool dontBroadcast)
 		fReloadTime *= PISTOL_RELOAD_INCAP_MULTIPLY;
 
 	g_fClientReloadTime[client] = GetEngineTime();
-	DataPack hPack = null;
+	DataPack hPack				= null;
 	CreateDataTimer(fReloadTime, WeaponReloadClip, hPack, TIMER_FLAG_NO_MAPCHANGE);
 	hPack.WriteCell(GetClientUserId(client));
 	hPack.WriteCell(EntIndexToEntRef(weapon));
@@ -377,15 +398,12 @@ void OnWeaponReload_Event(Event event, const char[] name, bool dontBroadcast)
 Action WeaponReloadClip(Handle timer, DataPack hPack)
 {
 	hPack.Reset();
-	int client = GetClientOfUserId(hPack.ReadCell());
-	int weapon = EntRefToEntIndex(hPack.ReadCell());
-	WeaponID weaponid = hPack.ReadCell();
-	float fReloadtime = hPack.ReadCell();
+	int		 client		 = GetClientOfUserId(hPack.ReadCell());
+	int		 weapon		 = EntRefToEntIndex(hPack.ReadCell());
+	WeaponID weaponid	 = hPack.ReadCell();
+	float	 fReloadtime = hPack.ReadCell();
 
-	if (fReloadtime != g_fClientReloadTime[client] ||
-		!IsValidAliveSurvivor(client) ||
-		weapon == INVALID_ENT_REFERENCE ||
-		!HasEntProp(weapon, Prop_Send, "m_bInReload") || GetEntProp(weapon, Prop_Send, "m_bInReload") == 0)
+	if (fReloadtime != g_fClientReloadTime[client] || !IsValidAliveSurvivor(client) || weapon == INVALID_ENT_REFERENCE || !HasEntProp(weapon, Prop_Send, "m_bInReload") || GetEntProp(weapon, Prop_Send, "m_bInReload") == 0)
 	{
 		return Plugin_Continue;
 	}
@@ -415,7 +433,7 @@ Action WeaponReloadClip(Handle timer, DataPack hPack)
 
 	if (!bIsInfiniteAmmo)
 	{
-		int ammo = L4D_GetReserveAmmo(client, weapon);
+		int ammo   = L4D_GetReserveAmmo(client, weapon);
 		int needed = g_iWeaponMaxClip[weaponid] - clip;
 		if (ammo <= needed)
 		{
@@ -476,7 +494,7 @@ void vCheckAndCreatGameData()
 	File hTemp;
 	bool bNeedUpdate;
 	if (FileExists(sFilePath))
-    {
+	{
 		char sFirst[64], sExpectedVersion[64];
 		hTemp = OpenFile(sFilePath, "r", false);
 		if (hTemp != null)
@@ -499,11 +517,11 @@ void vCheckAndCreatGameData()
 		bNeedUpdate = true;
 	}
 	if (bNeedUpdate)
-    {
+	{
 		hTemp = OpenFile(sFilePath, "w");
 		if (hTemp == null)
 		{
-			SetFailState("Plugin " ... PLUGIN_NAME ... "Something went wrong while creating the game data file!");
+			SetFailState("Plugin " ... PLUGIN_NAME... "Something went wrong while creating the game data file!");
 		}
 		hTemp.WriteLine("//%s", PLUGIN_VERSION);
 		hTemp.WriteLine("//windows signature credit: blueblur0730 https://github.com/blueblur0730/modified-plugins/blob/main/source/l4d2_cs_style_reload/gamedata/l4d2_cs_style_reload.txt", PLUGIN_VERSION);
@@ -513,22 +531,6 @@ void vCheckAndCreatGameData()
 		hTemp.WriteLine("	{");
 		hTemp.WriteLine("		\"MemPatches\"");
 		hTemp.WriteLine("		{");
-		hTemp.WriteLine("			\"CTerrorGun::Reload__ClipToZero\"");
-		hTemp.WriteLine("			{");
-		hTemp.WriteLine("				\"signature\"		\"CTerrorGun::Reload\"");
-		hTemp.WriteLine("				\"linux\"");
-		hTemp.WriteLine("				{");
-		hTemp.WriteLine("					\"offset\"	\"342h\"");
-		hTemp.WriteLine("					\"verify\"	\"\\xC7\\x83\\x20\\x14\\x00\\x00\\x00\\x00\\x00\\x00\"");
-		hTemp.WriteLine("					\"patch\"	\"\\x90\\x90\\x90\\x90\\x90\\x90\\x90\\x90\\x90\\x90\"");
-		hTemp.WriteLine("				}");
-		hTemp.WriteLine("				\"windows\"");
-		hTemp.WriteLine("				{");
-		hTemp.WriteLine("					\"offset\"	\"24Eh\"");
-		hTemp.WriteLine("					\"verify\"	\"\\xC7\\x86\\x14\\x14\\x00\\x00\\x00\\x00\\x00\\x00\"");
-		hTemp.WriteLine("					\"patch\"	\"\\x90\\x90\\x90\\x90\\x90\\x90\\x90\\x90\\x90\\x90\"");
-		hTemp.WriteLine("				}");
-		hTemp.WriteLine("			}");
 		hTemp.WriteLine("			\"CTerrorGun::Reload__AddClip\"");
 		hTemp.WriteLine("			{");
 		hTemp.WriteLine("				\"signature\"		\"CTerrorGun::Reload\"");
@@ -543,6 +545,22 @@ void vCheckAndCreatGameData()
 		hTemp.WriteLine("					\"offset\"	\"217h\"");
 		hTemp.WriteLine("					\"verify\"	\"\\x03\\xD0\"");
 		hTemp.WriteLine("					\"patch\"	\"\\x8B\\xD0\"");
+		hTemp.WriteLine("				}");
+		hTemp.WriteLine("			}");
+		hTemp.WriteLine("			\"CTerrorGun::Reload__ClipToZero\"");
+		hTemp.WriteLine("			{");
+		hTemp.WriteLine("				\"signature\"		\"CTerrorGun::Reload\"");
+		hTemp.WriteLine("				\"linux\"");
+		hTemp.WriteLine("				{");
+		hTemp.WriteLine("					\"offset\"	\"342h\"");
+		hTemp.WriteLine("					\"verify\"	\"\\xC7\\x83\\x20\\x14\\x00\\x00\\x00\\x00\\x00\\x00\"");
+		hTemp.WriteLine("					\"patch\"	\"\\x90\\x90\\x90\\x90\\x90\\x90\\x90\\x90\\x90\\x90\"");
+		hTemp.WriteLine("				}");
+		hTemp.WriteLine("				\"windows\"");
+		hTemp.WriteLine("				{");
+		hTemp.WriteLine("					\"offset\"	\"24Eh\"");
+		hTemp.WriteLine("					\"verify\"	\"\\xC7\\x86\\x14\\x14\\x00\\x00\\x00\\x00\\x00\\x00\"");
+		hTemp.WriteLine("					\"patch\"	\"\\x90\\x90\\x90\\x90\\x90\\x90\\x90\\x90\\x90\\x90\"");
 		hTemp.WriteLine("				}");
 		hTemp.WriteLine("			}");
 		hTemp.WriteLine("		}");

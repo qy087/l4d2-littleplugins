@@ -6,22 +6,6 @@
 	{
 		"MemPatches"
 		{
-			"CTerrorGun::Reload__ClipToZero"
-			{
-				"signature"		"CTerrorGun::Reload"
-				"linux"
-				{
-					"offset"	"342h"
-					"verify"	"\xC7\x83\x20\x14\x00\x00\x00\x00\x00\x00"
-					"patch"	"\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90"
-				}
-				"windows"
-				{
-					"offset"	"24Eh"
-					"verify"	"\xC7\x86\x14\x14\x00\x00\x00\x00\x00\x00"
-					"patch"	"\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90"
-				}
-			}
 			"CTerrorGun::Reload__AddClip"
 			{
 				"signature"		"CTerrorGun::Reload"
@@ -36,6 +20,22 @@
 					"offset"	"217h"
 					"verify"	"\x03\xD0"
 					"patch"	"\x8B\xD0"
+				}
+			}
+			"CTerrorGun::Reload__ClipToZero"
+			{
+				"signature"		"CTerrorGun::Reload"
+				"linux"
+				{
+					"offset"	"342h"
+					"verify"	"\xC7\x83\x20\x14\x00\x00\x00\x00\x00\x00"
+					"patch"	"\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90"
+				}
+				"windows"
+				{
+					"offset"	"24Eh"
+					"verify"	"\xC7\x86\x14\x14\x00\x00\x00\x00\x00\x00"
+					"patch"	"\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90"
 				}
 			}
 		}
