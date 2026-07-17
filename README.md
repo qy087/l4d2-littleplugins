@@ -14,5 +14,6 @@ Make/adapt/fix some plugins
 * <b>[l4d2_nightvision](/l4d2_nightvision)</b>
     * 多样夜视仪(Enhanced Nightvision.)
 * <b>[l4d2_weapon_csgo_reload_modify](/l4d2_weapon_csgo_reload_modify) <b>By:</b>[Harry Potter](https://github.com/fbef0102)</b>
-    * 内存补丁版本仿CSGO / CS2 换弹机制(Reload like csgo/cs2 weapon.)
-	
+    * 内存补丁版本仿CSGO / 早期CS2 换弹机制(Reload like csgo/cs2 weapon.)
+* <b>[l4d2_chainsaw_canpickup](/l4d2_chainsaw_canpickup) </b>
+    * 允许电锯攻击过程中拾取武器，物品等 (Allow Chainsaw Pickup While Attacking.)
