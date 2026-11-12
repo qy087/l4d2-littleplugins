@@ -17,3 +17,5 @@ Make/adapt/fix some plugins
     * 内存补丁版本仿CSGO / 早期CS2 换弹机制(Reload like csgo/cs2 weapon.)
 * <b>[l4d2_chainsaw_canpickup](/l4d2_chainsaw_canpickup) </b>
     * 允许电锯攻击过程中拾取武器，物品等 (Allow Chainsaw Pickup While Attacking.)
+* <b>[clientprefs_manager](/clientprefs_manager)</b>
+    * 铲掉那些插件删了、Cookie 还赖在库里的"赛博遗留物"，不用整个数据库重开 (Clean up cookies left behind by deleted plugins, without nuking the whole database.)

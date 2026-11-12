@@ -1,0 +1,109 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ "v*", "[0-9]*" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  SM_VERSIONS: "1.12 1.11"
+  PACKAGE_NAME: "l4d2-littleplugins"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch SourceMod compilers
+        run: |
+          set -euo pipefail
+          for br in $SM_VERSIONS; do
+            base="https://sm.alliedmods.net/smdrop/$br"
+            file="$(curl -fsSL "$base/" \
+              | grep -oE "sourcemod-${br//./\\.}\\.[0-9]+-git[0-9]+-linux\\.tar\\.gz" \
+              | sort -uV | tail -n1)"
+            if [ -z "$file" ]; then
+              echo "::error::No SourceMod $br Linux build found at $base"
+              exit 1
+            fi
+            echo "Using $base/$file"
+            curl -fsSL -o "sm-$br.tar.gz" "$base/$file"
+            mkdir -p "sm/$br"
+            tar -xzf "sm-$br.tar.gz" -C "sm/$br"
+            test -d "sm/$br/addons/sourcemod/scripting/include"
+          done
+
+      - name: Compile plugins
+        run: |
+          set -euo pipefail
+
+          for br in $SM_VERSIONS; do
+            sm="$(cd "sm/$br/addons/sourcemod/scripting" && pwd)"
+            if [ -x "$sm/spcomp64" ]; then
+              spcomp="$sm/spcomp64"
+            else
+              spcomp="$sm/spcomp"
+            fi
+            chmod +x "$spcomp"
+
+            stage="$PWD/build/$br/addons/sourcemod"
+            mkdir -p "$stage/plugins" "$stage/scripting"
+
+            for sp in */scripting/*.sp; do
+              name="$(basename "$sp" .sp)"
+              folder="$(dirname "$(dirname "$sp")")"
+
+              "$spcomp" "$sp" \
+                -i"$PWD/include_$br" \
+                -i"$sm/include" \
+                -o"$stage/plugins/$name.smx"
+
+              cp "$sp" "$stage/scripting/"
+
+              for extra in configs translations gamedata data; do
+                if [ -d "$folder/$extra" ]; then
+                  mkdir -p "$stage/$extra"
+                  cp -r "$folder/$extra/." "$stage/$extra/"
+                fi
+              done
+
+              echo "built $name for sm$br"
+            done
+
+            ls -l "$stage/plugins"
+          done
+
+      - name: Package
+        run: |
+          set -euo pipefail
+
+          stamp="$(date -u +%Y%m%d_%H%M)"
+          dist="$PWD/dist"
+          mkdir -p "$dist"
+
+          for br in $SM_VERSIONS; do
+            zip_path="$dist/${PACKAGE_NAME}-${stamp}-sm${br}.zip"
+            (cd "build/$br" && zip -qr "$zip_path" addons)
+            echo "created $zip_path"
+            unzip -l "$zip_path"
+          done
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugins
+          path: dist/*.zip
+
+      - name: Publish release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
